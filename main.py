@@ -246,8 +246,7 @@ def upload_main():
                 file_paths.append(file_path)
                 # Copy to global uploads folder for listing
                 global_path = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                if not os.path.exists(global_path):
-                    shutil.copy2(file_path, global_path)
+                shutil.copy2(file_path, global_path)
 
         # Process selected available files (copy to session)
         for filename in available_files:
