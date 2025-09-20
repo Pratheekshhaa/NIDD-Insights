@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Parameter Relation Viewer - NIDD</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+  <!-- Autocomplete library -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/awesomplete/awesomplete.css" />
+  <script src="https://cdn.jsdelivr.net/npm/awesomplete/awesomplete.min.js"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary-gradient: linear-gradient(135deg, #2563eb 0%, #1e40af 50%, #1d4ed8 100%);
+      --secondary-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      --accent-color: #3b82f6;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --border-color: #e2e8f0;
+      --success-color: #10b981;
+      --error-color: #ef4444;
+      --warning-color: #f59e0b;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--secondary-gradient);
+      color: var(--text-primary);
+      line-height: 1.5;
+      overflow-x: hidden;
+      font-size: 13px;
+    }
+
+    /* Header */
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-sm);
+    }
+
+    nav {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0.5rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 1rem;
+      font-weight: 700;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .logo i {
+      font-size: 1.1rem;
+      background: var(--primary-gradient);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-links {
+      display: flex;
+      list-style: none;
+      gap: 0.8rem;
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      padding: 0.3rem 0.6rem;
+      border-radius: 0.3rem;
+      transition: all 0.3s ease;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .nav-links a:hover {
+      color: var(--accent-color);
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    /* Main Layout */
+    .main-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.2rem 1.5rem 2.5rem;
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 1.5rem;
+      height: calc(100vh - 120px);
+    }
+
+    /* Left Panel - Controls */
+    .control-panel {
+      background: white;
+      border-radius: 0.8rem;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      height: fit-content;
+      max-height: calc(100vh - 140px);
+      overflow-y: auto;
+    }
+
+    .panel-header {
+      background: var(--primary-gradient);
+      padding: 1rem;
+      color: white;
+      text-align: center;
+    }
+
+    .panel-header h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.2rem;
+    }
+
+    .panel-header p {
+      opacity: 0.9;
+      font-size: 0.75rem;
+    }
+
+    .panel-body {
+      padding: 1.5rem;
+    }
+
+    /* Section Styling */
+    .section {
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    /* Form Elements */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.4rem;
+      font-size: 0.75rem;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 2px solid var(--border-color);
+      border-radius: 0.5rem;
+      font-size: 0.8rem;
+      transition: all 0.3s ease;
+      background: white;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Status Messages */
+    .status-message {
+      padding: 0.8rem;
+      border-radius: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      display: none;
+      margin-bottom: 1rem;
+    }
+
+    .status-success {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid var(--success-color);
+      color: var(--success-color);
+    }
+
+    .status-error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--error-color);
+      color: var(--error-color);
+    }
+
+    .status-info {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid var(--accent-color);
+      color: var(--accent-color);
+    }
+
+    /* Buttons */
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+
+    .btn-primary {
+      background: var(--primary-gradient);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: var(--accent-color);
+      color: white;
+    }
+
+    .btn-success {
+      background: var(--success-color);
+      color: white;
+    }
+
+    .btn-warning {
+      background: var(--warning-color);
+      color: white;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Loading */
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 1rem;
+      background: rgba(59, 130, 246, 0.05);
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .spinner {
+      width: 1.2rem;
+      height: 1.2rem;
+      border: 2px solid rgba(59, 130, 246, 0.1);
+      border-top: 2px solid var(--accent-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 0.6rem;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading p {
+      color: var(--text-secondary);
+      font-weight: 500;
+      font-size: 0.75rem;
+    }
+
+    /* Right Panel - Relations Display */
+    .relations-panel {
+      background: white;
+      border-radius: 0.8rem;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .relations-header {
+      background: var(--secondary-gradient);
+      padding: 0.8rem 1.2rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .relations-header h3 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .relations-content {
+      flex: 1;
+      padding: 1.5rem;
+      overflow: auto;
+      display: flex;
+      align-items: flex-start;
+      justify-content: flex-start;
+      min-height: 400px;
+    }
+
+    .relations-placeholder {
+      text-align: center;
+      color: var(--text-secondary);
+      padding: 2rem;
+      width: 100%;
+      align-self: center;
+    }
+
+    .relations-placeholder i {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .relations-placeholder h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .relations-placeholder p {
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+
+    #relation-display {
+      width: 100%;
+      min-height: 100%;
+    }
+
+    /* Relations List Styling */
+    .relations-list {
+      width: 100%;
+    }
+
+    .relations-list ol {
+      padding-left: 1.5rem;
+      margin: 0;
+      font-size: 0.85rem;
+      line-height: 1.6;
+    }
+
+    .relations-list li {
+      padding: 0.4rem 0;
+      border-bottom: 1px solid rgba(226, 232, 240, 0.5);
+      color: var(--text-primary);
+    }
+
+    .relations-list li:last-child {
+      border-bottom: none;
+    }
+
+    .relations-list li:hover {
+      background: rgba(59, 130, 246, 0.05);
+      margin: 0 -0.5rem;
+      padding: 0.4rem 0.5rem;
+      border-radius: 0.3rem;
+    }
+
+    .no-relations {
+      text-align: center;
+      color: var(--text-secondary);
+      font-style: italic;
+      padding: 2rem;
+    }
+
+    .error-message {
+      color: var(--error-color);
+      background: rgba(239, 68, 68, 0.1);
+      padding: 1rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--error-color);
+      text-align: center;
+      font-size: 0.8rem;
+    }
+
+    /* Awesomplete styling */
+    .awesomplete {
+      width: 100%;
+    }
+
+    .awesomplete > ul {
+      border-radius: 0.5rem;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-lg);
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .awesomplete mark {
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--accent-color);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+      .main-container {
+        grid-template-columns: 350px 1fr;
+        gap: 1rem;
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .main-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+        height: auto;
+      }
+
+      .control-panel {
+        max-height: none;
+        height: auto;
+      }
+
+      .relations-content {
+        min-height: 500px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+
+      .main-container {
+        padding: 1rem;
+        gap: 1rem;
+      }
+
+      .panel-body {
+        padding: 1rem;
+      }
+
+      .relations-content {
+        padding: 1rem;
+      }
+    }
+
+    /* Animations */
+    .fade-in {
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(15px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <nav>
+      <div class="logo">
+        <i class="fas fa-project-diagram"></i>
+        <span>NIDD</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
+        <li><a href="#docs"><i class="fas fa-book"></i> Docs</a></li>
+        <li><a href="#about"><i class="fas fa-info-circle"></i> About</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Main Container -->
+  <div class="main-container">
+    <!-- Left Panel - Control Panel -->
+    <div class="control-panel fade-in">
+      <div class="panel-header">
+        <h2>Parameter Configuration</h2>
+        <p>Select and analyze parameter relationships</p>
+      </div>
+
+      <div class="panel-body">
+        <!-- Parameter Selection -->
+        <div class="section">
+          <div class="section-title">
+            <i class="fas fa-search"></i>
+            Parameter Selection
+          </div>
+          
+          <div class="form-group">
+            <label for="parameter-input">Select Parameter:</label>
+            <input id="parameter-input" class="awesomplete" type="text" 
+                   placeholder="Start typing parameter name..." autocomplete="off" />
+          </div>
+          
+          <!-- Status Messages -->
+          <div class="status-message" id="status-message"></div>
+          
+          <!-- Loading -->
+          <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Loading parameters...</p>
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="section">
+          <div class="section-title">
+            <i class="fas fa-tools"></i>
+            Actions
+          </div>
+
+          <div class="btn-group">
+            <button id="fetch-relation" class="btn-primary" disabled>
+              <i class="fas fa-network-wired"></i>
+              Show Related Parameters
+            </button>
+            <button id="refresh-parameters" class="btn-secondary">
+              <i class="fas fa-refresh"></i>
+              Refresh Parameters
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel - Relations Display -->
+    <div class="relations-panel fade-in">
+      <div class="relations-header">
+        <h3><i class="fas fa-network-wired"></i> Parameter Relations</h3>
+      </div>
+      <div class="relations-content">
+        <div id="relation-display">
+          <div class="relations-placeholder">
+            <i class="fas fa-network-wired"></i>
+            <h4>No Relations Displayed</h4>
+            <p>Select a parameter from the left panel and click "Show Related Parameters" to view its relationships and dependencies.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // DOM Elements
+  const parameterInput = document.getElementById('parameter-input');
+  const fetchRelationBtn = document.getElementById('fetch-relation');
+  const refreshBtn = document.getElementById('refresh-parameters');
+  const statusMessage = document.getElementById('status-message');
+  const loading = document.getElementById('loading');
+  const relationDisplay = document.getElementById('relation-display');
+
+  let availableParameters = [];
+
+  // Utility Functions
+  function showStatus(message, type = 'info') {
+    statusMessage.textContent = message;
+    statusMessage.className = `status-message status-${type}`;
+    statusMessage.style.display = 'block';
+    
+    // Auto-hide after 5 seconds for success/error messages
+    if (type === 'success' || type === 'error') {
+      setTimeout(() => {
+        statusMessage.style.display = 'none';
+      }, 5000);
+    }
+  }
+
+  function showLoading(show = true) {
+    loading.style.display = show ? 'block' : 'none';
+  }
+
+  function updateButtonStates() {
+    const hasParameter = parameterInput.value.trim() !== '';
+    const hasValidParameter = availableParameters.includes(parameterInput.value.trim());
+
+    fetchRelationBtn.disabled = !hasValidParameter;
+  }
+
+  // Load parameters from server
+  async function loadParameters() {
+    try {
+      showLoading(true);
+      showStatus('Loading available parameters...', 'info');
+
+      const response = await fetch('/get-parameters');
+      const data = await response.json();
+      
+      if (data.parameters) {
+        availableParameters = data.parameters;
+        
+        // Initialize autocomplete
+        new Awesomplete(parameterInput, {
+          list: availableParameters,
+          minChars: 1,
+          autoFirst: true,
+          maxItems: 10
+        });
+        
+        showStatus(`Successfully loaded ${availableParameters.length} parameters!`, 'success');
+      } else {
+        showStatus('No parameters found in the uploaded files.', 'error');
+      }
+    } catch (error) {
+      showStatus(`Error loading parameters: ${error.message}`, 'error');
+      console.error('Failed to load parameters', error);
+    } finally {
+      showLoading(false);
+      updateButtonStates();
+    }
+  }
+
+  // Fetch parameter relations
+  async function fetchRelation(param) {
+    if (!param) {
+      showStatus('Please enter a parameter name.', 'error');
+      return;
+    }
+
+    if (!availableParameters.includes(param)) {
+      showStatus('Please select a valid parameter from the dropdown.', 'error');
+      return;
+    }
+
+    try {
+      showLoading(true);
+      showStatus('Fetching parameter relations...', 'info');
+
+      const response = await fetch('/get-relation', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({parameter: param})
+      });
+      
+      const data = await response.json();
+
+      relationDisplay.innerHTML = ""; // Clear previous content
+
+      if (data.relation) {
+        // Process relations
+        const relations = data.relation
+          .split(/[,;]+/)
+          .map(r => r.trim().replace(/::public/g, ""))
+          .filter(r => r);
+
+        if (relations.length > 0) {
+          const container = document.createElement("div");
+          container.className = "relations-list";
+          
+          const title = document.createElement("h4");
+          title.textContent = `Relations for: ${param}`;
+          title.style.marginBottom = "1rem";
+          title.style.color = "var(--text-primary)";
+          title.style.fontSize = "0.9rem";
+          title.style.fontWeight = "600";
+          container.appendChild(title);
+
+          const ol = document.createElement("ol");
+          relations.forEach(rel => {
+            const li = document.createElement("li");
+            li.textContent = rel;
+            ol.appendChild(li);
+          });
+
+          container.appendChild(ol);
+          relationDisplay.appendChild(container);
+          showStatus('Parameter relations loaded successfully!', 'success');
+        } else {
+          relationDisplay.innerHTML = `<div class="no-relations">No relations found for parameter: ${param}</div>`;
+          showStatus('No relations found for the selected parameter.', 'info');
+        }
+      } else if (data.error) {
+        relationDisplay.innerHTML = `<div class="error-message">Error: ${data.error}</div>`;
+        showStatus(`Error: ${data.error}`, 'error');
+      } else {
+        relationDisplay.innerHTML = `<div class="no-relations">No relations found for parameter: ${param}</div>`;
+        showStatus('No relations found for the selected parameter.', 'info');
+      }
+    } catch (error) {
+      relationDisplay.innerHTML = `<div class="error-message">Error fetching relation: ${error.message}</div>`;
+      showStatus(`Error fetching relations: ${error.message}`, 'error');
+      console.error('Error fetching relation:', error);
+    } finally {
+      showLoading(false);
+      updateButtonStates();
+    }
+  }
+
+  // Event Listeners
+  fetchRelationBtn.addEventListener('click', () => {
+    const param = parameterInput.value.trim();
+    fetchRelation(param);
+  });
+
+  refreshBtn.addEventListener('click', loadParameters);
+  parameterInput.addEventListener('input', updateButtonStates);
+
+  // Initialize on page load
+  document.addEventListener('DOMContentLoaded', () => {
+    loadParameters();
+    updateButtonStates();
+  });
+</script>
+
+
+</body>
+</html>

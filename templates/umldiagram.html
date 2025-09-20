@@ -1,0 +1,776 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>UML Class Diagram Generator - NIDD</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+
+  <!-- Mermaid for UML rendering -->
+  <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+
+  <!-- Autocomplete library -->
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/awesomplete/awesomplete.css" />
+  <script src="https://cdn.jsdelivr.net/npm/awesomplete/awesomplete.min.js"></script>
+
+  <!-- html2canvas for PNG downloads -->
+  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary-gradient: linear-gradient(135deg, #2563eb 0%, #1e40af 50%, #1d4ed8 100%);
+      --secondary-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      --accent-color: #3b82f6;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --border-color: #e2e8f0;
+      --success-color: #10b981;
+      --error-color: #ef4444;
+      --warning-color: #f59e0b;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--secondary-gradient);
+      color: var(--text-primary);
+      line-height: 1.5;
+      overflow-x: hidden;
+      font-size: 13px;
+    }
+
+    /* Header */
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-sm);
+    }
+
+    nav {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 0.5rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 1rem;
+      font-weight: 700;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .logo i {
+      font-size: 1.1rem;
+      background: var(--primary-gradient);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
+
+    .nav-links {
+      display: flex;
+      list-style: none;
+      gap: 0.8rem;
+      align-items: center;
+    }
+
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      padding: 0.3rem 0.6rem;
+      border-radius: 0.3rem;
+      transition: all 0.3s ease;
+      font-size: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
+    }
+
+    .nav-links a:hover {
+      color: var(--accent-color);
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    /* Main Layout */
+    .main-container {
+      max-width: 1400px;
+      margin: 0 auto;
+      padding: 1.2rem 1.5rem 2.5rem;
+      display: grid;
+      grid-template-columns: 400px 1fr;
+      gap: 1.5rem;
+      height: calc(100vh - 120px);
+    }
+
+    /* Left Panel - Controls */
+    .control-panel {
+      background: white;
+      border-radius: 0.8rem;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      height: fit-content;
+      max-height: calc(100vh - 140px);
+      overflow-y: auto;
+    }
+
+    .panel-header {
+      background: var(--primary-gradient);
+      padding: 1rem;
+      color: white;
+      text-align: center;
+    }
+
+    .panel-header h2 {
+      font-size: 1rem;
+      font-weight: 700;
+      margin-bottom: 0.2rem;
+    }
+
+    .panel-header p {
+      opacity: 0.9;
+      font-size: 0.75rem;
+    }
+
+    .panel-body {
+      padding: 1.5rem;
+    }
+
+    /* Section Styling */
+    .section {
+      margin-bottom: 1.5rem;
+      padding-bottom: 1rem;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .section:last-child {
+      border-bottom: none;
+      margin-bottom: 0;
+    }
+
+    .section-title {
+      font-size: 0.85rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.8rem;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    /* Form Elements */
+    .form-group {
+      margin-bottom: 1rem;
+    }
+
+    .form-group:last-child {
+      margin-bottom: 0;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.4rem;
+      font-size: 0.75rem;
+    }
+
+    input, select {
+      width: 100%;
+      padding: 0.6rem 0.8rem;
+      border: 2px solid var(--border-color);
+      border-radius: 0.5rem;
+      font-size: 0.8rem;
+      transition: all 0.3s ease;
+      background: white;
+    }
+
+    input:focus, select:focus {
+      outline: none;
+      border-color: var(--accent-color);
+      box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+    }
+
+    /* Status Messages */
+    .status-message {
+      padding: 0.8rem;
+      border-radius: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 500;
+      display: none;
+      margin-bottom: 1rem;
+    }
+
+    .status-success {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid var(--success-color);
+      color: var(--success-color);
+    }
+
+    .status-error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--error-color);
+      color: var(--error-color);
+    }
+
+    .status-info {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid var(--accent-color);
+      color: var(--accent-color);
+    }
+
+    /* Buttons */
+    .btn-group {
+      display: flex;
+      flex-direction: column;
+      gap: 0.6rem;
+    }
+
+    button {
+      width: 100%;
+      padding: 0.7rem 1rem;
+      border: none;
+      border-radius: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.4rem;
+    }
+
+    .btn-primary {
+      background: var(--primary-gradient);
+      color: white;
+    }
+
+    .btn-secondary {
+      background: var(--accent-color);
+      color: white;
+    }
+
+    .btn-success {
+      background: var(--success-color);
+      color: white;
+    }
+
+    .btn-warning {
+      background: var(--warning-color);
+      color: white;
+    }
+
+    button:hover:not(:disabled) {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-md);
+    }
+
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Loading */
+    .loading {
+      display: none;
+      text-align: center;
+      padding: 1rem;
+      background: rgba(59, 130, 246, 0.05);
+      border-radius: 0.5rem;
+      margin-bottom: 1rem;
+    }
+
+    .spinner {
+      width: 1.2rem;
+      height: 1.2rem;
+      border: 2px solid rgba(59, 130, 246, 0.1);
+      border-top: 2px solid var(--accent-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 0.6rem;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading p {
+      color: var(--text-secondary);
+      font-weight: 500;
+      font-size: 0.75rem;
+    }
+
+    /* Right Panel - Diagram */
+    .diagram-panel {
+      background: white;
+      border-radius: 0.8rem;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .diagram-header {
+      background: var(--secondary-gradient);
+      padding: 0.8rem 1.2rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: between;
+    }
+
+    .diagram-header h3 {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .diagram-content {
+      flex: 1;
+      overflow: auto;
+      display: flex;
+      align-items: flex-start;
+      justify-content: center;
+      min-height: 400px;
+      padding: 2rem;
+      position: relative;
+    }
+
+    .diagram-placeholder {
+      text-align: center;
+      color: var(--text-secondary);
+      padding: 2rem;
+    }
+
+    .diagram-placeholder i {
+      font-size: 2rem;
+      margin-bottom: 1rem;
+      opacity: 0.5;
+    }
+
+    .diagram-placeholder h4 {
+      font-size: 1rem;
+      font-weight: 600;
+      margin-bottom: 0.5rem;
+      color: var(--text-primary);
+    }
+
+    .diagram-placeholder p {
+      font-size: 0.8rem;
+      line-height: 1.4;
+    }
+
+    #uml-diagram {
+      width: 100%;
+      min-height: 400px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      overflow: visible;
+    }
+
+    #uml-diagram .mermaid {
+      width: 100%;
+      min-height: 400px;
+      overflow: visible !important;
+      display: flex !important;
+      justify-content: center !important;
+      align-items: flex-start !important;
+      padding: 20px 0 !important;
+    }
+
+    #uml-diagram .mermaid svg {
+      max-width: 100% !important;
+      height: auto !important;
+      overflow: visible !important;
+    }
+
+    /* Awesomplete styling */
+    .awesomplete {
+      width: 100%;
+    }
+
+    .awesomplete > ul {
+      border-radius: 0.5rem;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-lg);
+      max-height: 150px;
+      overflow-y: auto;
+    }
+
+    .awesomplete mark {
+      background: rgba(59, 130, 246, 0.1);
+      color: var(--accent-color);
+    }
+
+    /* Responsive Design */
+    @media (max-width: 1200px) {
+      .main-container {
+        grid-template-columns: 350px 1fr;
+        gap: 1rem;
+      }
+    }
+
+    @media (max-width: 1024px) {
+      .main-container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto 1fr;
+        height: auto;
+      }
+
+      .control-panel {
+        max-height: none;
+        height: auto;
+      }
+
+      .diagram-content {
+        min-height: 500px;
+      }
+    }
+
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+
+      .main-container {
+        padding: 1rem;
+        gap: 1rem;
+      }
+
+      .panel-body {
+        padding: 1rem;
+      }
+
+      .diagram-content {
+        padding: 1rem;
+      }
+    }
+
+    /* Animations */
+    .fade-in {
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(15px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <nav>
+      <div class="logo">
+        <i class="fas fa-project-diagram"></i>
+        <span>NIDD</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
+        <li><a href="#docs"><i class="fas fa-book"></i> Docs</a></li>
+        <li><a href="#about"><i class="fas fa-info-circle"></i> About</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Main Container -->
+  <div class="main-container">
+    <!-- Left Panel - Control Panel -->
+    <div class="control-panel fade-in">
+      <div class="panel-header">
+        <h2>UML Configuration</h2>
+        <p>Configure and generate your diagram</p>
+      </div>
+
+      <div class="panel-body">
+        <!-- File Status Section -->
+        <div class="section">
+          <div class="section-title">
+            <i class="fas fa-info-circle"></i>
+            File Status
+          </div>
+          <div class="status-message status-info" id="initial-status" style="display: block;">
+            Loading your uploaded files...
+          </div>
+        </div>
+
+        <!-- Class Selection -->
+        <div class="section">
+          <div class="section-title">
+            <i class="fas fa-cogs"></i>
+            Class Configuration
+          </div>
+          
+          <div class="form-group">
+            <label for="parameter-input">Select Class:</label>
+            <input id="parameter-input" class="awesomplete" type="text" 
+                   placeholder="Start typing class name..." autocomplete="off" />
+          </div>
+          
+          <div class="form-group">
+            <label for="depth-input">Relationship Depth:</label>
+            <input type="number" id="depth-input" min="1" max="5" value="1" />
+          </div>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="section">
+          <div class="section-title">
+            <i class="fas fa-tools"></i>
+            Actions
+          </div>
+          
+          <!-- Status Messages -->
+          <div class="status-message" id="status-message"></div>
+
+          <!-- Loading -->
+          <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processing your request...</p>
+          </div>
+
+          <div class="btn-group">
+            <button id="load-classes" class="btn-secondary">
+              <i class="fas fa-refresh"></i>
+              Load Classes
+            </button>
+            <button id="generate-uml" class="btn-primary" disabled>
+              <i class="fas fa-play"></i>
+              Generate UML Diagram
+            </button>
+            <button id="download-image" class="btn-success" disabled>
+              <i class="fas fa-download"></i>
+              Download PNG
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Panel - Diagram Display -->
+    <div class="diagram-panel fade-in">
+      <div class="diagram-header">
+        <h3><i class="fas fa-sitemap"></i> UML Class Diagram</h3>
+      </div>
+      <div class="diagram-content">
+        <div id="uml-diagram">
+          <div class="diagram-placeholder">
+            <i class="fas fa-sitemap"></i>
+            <h4>No Diagram Generated</h4>
+            <p>Select a class from the left panel and click "Generate UML Diagram" to visualize your class relationships and structure.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript Logic -->
+  <script>
+    let classList = [];
+let isInitialized = false;
+
+// DOM Elements
+const parameterInput = document.getElementById('parameter-input');
+const depthInput = document.getElementById('depth-input');
+const loadClassesBtn = document.getElementById('load-classes');
+const generateUmlBtn = document.getElementById('generate-uml');
+const downloadImageBtn = document.getElementById('download-image');
+const statusMessage = document.getElementById('status-message');
+const initialStatus = document.getElementById('initial-status');
+const loading = document.getElementById('loading');
+
+// Utility Functions
+function showStatus(message, type = 'info') {
+  statusMessage.textContent = message;
+  statusMessage.className = `status-message status-${type}`;
+  statusMessage.style.display = 'block';
+  if (type === 'success' || type === 'error') {
+    setTimeout(() => statusMessage.style.display = 'none', 5000);
+  }
+}
+
+function showLoading(show = true) {
+  loading.style.display = show ? 'block' : 'none';
+}
+
+function updateButtonStates() {
+  const hasValidClass = parameterInput.value && classList.includes(parameterInput.value);
+  const hasDiagram = document.querySelector('#uml-diagram .mermaid');
+  generateUmlBtn.disabled = !hasValidClass;
+  downloadImageBtn.disabled = !hasDiagram;
+}
+
+function renderMermaid(uml) {
+  const container = document.getElementById('uml-diagram');
+  container.innerHTML = '';
+  const newDiagram = document.createElement('div');
+  newDiagram.className = 'mermaid';
+  newDiagram.innerHTML = uml;
+  container.appendChild(newDiagram);
+
+  mermaid.initialize({ startOnLoad: false, theme: 'default' });
+
+  setTimeout(() => mermaid.init(undefined, newDiagram).then(updateButtonStates), 100);
+}
+
+// Initialize page
+async function initializePage() {
+  try {
+    showLoading(true);
+    initialStatus.style.display = 'block';
+    await loadClasses();
+    if (classList.length > 0) {
+      initialStatus.textContent = `Successfully loaded ${classList.length} classes from your uploaded files.`;
+      initialStatus.className = 'status-message status-success';
+      isInitialized = true;
+    } else {
+      initialStatus.textContent = 'No classes found. Please make sure your Excel files contain valid data.';
+      initialStatus.className = 'status-message status-error';
+    }
+  } catch (error) {
+    initialStatus.textContent = 'Failed to load files.';
+    initialStatus.className = 'status-message status-error';
+  } finally {
+    showLoading(false);
+    updateButtonStates();
+  }
+}
+
+// Load classes from uploaded files
+async function loadClasses() {
+  try {
+    showLoading(true);
+    showStatus('Loading classes...', 'info');
+
+    const response = await fetch('/upload', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({})
+    });
+
+    const result = await response.json();
+    if (result.success) {
+      classList = result.classes || [];
+      if (classList.length > 0) {
+        new Awesomplete(parameterInput, { list: classList, minChars: 1, autoFirst: true, maxItems: 10 });
+        showStatus(`Successfully loaded ${classList.length} classes!`, 'success');
+      } else {
+        showStatus('No classes found.', 'error');
+      }
+    } else throw new Error(result.error || 'Failed to load classes');
+  } catch (error) {
+    showStatus(`Error loading classes: ${error.message}`, 'error');
+  } finally {
+    showLoading(false);
+    updateButtonStates();
+  }
+}
+
+// Generate UML diagram
+async function generateUML() {
+  const selectedClass = parameterInput.value.trim();
+  const depth = parseInt(depthInput.value) || 1;
+
+  if (!selectedClass) return showStatus('Please enter a class name.', 'error');
+  if (!classList.includes(selectedClass)) return showStatus('Select a valid class.', 'error');
+
+  try {
+    showLoading(true);
+    showStatus('Generating UML diagram...', 'info');
+
+    const response = await fetch('/uml', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ parameter: selectedClass, depth })
+    });
+
+    const data = await response.json();
+    if (data.uml) {
+      renderMermaid(data.uml);
+      showStatus('UML diagram generated successfully!', 'success');
+    } else throw new Error('No UML data received');
+  } catch (error) {
+    showStatus(`Error generating UML: ${error.message}`, 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+// Download diagram as PNG
+async function downloadDiagram() {
+  const diagram = document.querySelector('#uml-diagram .mermaid');
+  if (!diagram) return showStatus('No diagram to download.', 'error');
+
+  try {
+    showLoading(true);
+    showStatus('Preparing download...', 'info');
+
+    const canvas = await html2canvas(diagram, { backgroundColor: '#ffffff', scale: 2 });
+    const link = document.createElement('a');
+    link.download = `uml_diagram_${parameterInput.value.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+    link.href = canvas.toDataURL('image/png');
+    link.click();
+
+    showStatus('Diagram downloaded successfully!', 'success');
+  } catch (error) {
+    showStatus(`Error downloading diagram: ${error.message}`, 'error');
+  } finally {
+    showLoading(false);
+  }
+}
+
+// Event Listeners
+loadClassesBtn.addEventListener('click', loadClasses);
+generateUmlBtn.addEventListener('click', generateUML);
+downloadImageBtn.addEventListener('click', downloadDiagram);
+parameterInput.addEventListener('input', updateButtonStates);
+depthInput.addEventListener('change', updateButtonStates);
+
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', initializePage);
+
+  </script>
+</body>
+</html>

@@ -1,0 +1,1160 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <title>NIDD</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  
+  <!-- Fonts -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+  
+  <!-- Icons -->
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  
+  <!-- SheetJS library for reading Excel files -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    :root {
+      --primary-gradient: linear-gradient(135deg, #2563eb 0%, #1e40af 50%, #1d4ed8 100%);
+      --secondary-gradient: linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%);
+      --accent-color: #3b82f6;
+      --text-primary: #1e293b;
+      --text-secondary: #64748b;
+      --border-color: #e2e8f0;
+      --success-color: #10b981;
+      --error-color: #ef4444;
+      --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+      --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+      --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+      --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+    }
+
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: var(--secondary-gradient);
+      color: var(--text-primary);
+      line-height: 1.5;
+      overflow-x: hidden;
+      font-size: 13px;
+    }
+
+    /* Compact Header */
+    header {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(20px);
+      border-bottom: 1px solid var(--border-color);
+      position: sticky;
+      top: 0;
+      z-index: 100;
+      box-shadow: var(--shadow-sm);
+    }
+
+    nav {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0.5rem 1.5rem;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      font-size: 1rem;
+      font-weight: 700;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .logo i {
+    font-size: 1.1rem;
+    background: var(--primary-gradient);
+    background-clip: text;                /* ✅ Standard property */
+    -webkit-background-clip: text;        /* ✅ WebKit-prefixed */
+    -webkit-text-fill-color: transparent;
+  }
+
+
+    .nav-links {
+      display: flex;
+      list-style: none;
+      gap: 0.8rem;
+    }
+
+    .nav-links a {
+      color: var(--text-secondary);
+      text-decoration: none;
+      font-weight: 500;
+      padding: 0.3rem 0.6rem;
+      border-radius: 0.3rem;
+      transition: all 0.3s ease;
+      font-size: 0.8rem;
+    }
+
+    .nav-links a:hover {
+      color: var(--accent-color);
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    /* Compact Hero Section */
+    .hero {
+      padding: 1.2rem 1.5rem 0.8rem;
+      text-align: center;
+      background: white;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .hero-content {
+      max-width: 600px;
+      margin: 0 auto;
+    }
+
+    .hero h1 {
+      font-size: 1.5rem;
+      font-weight: 700;
+      margin-bottom: 0.4rem;
+      background: var(--primary-gradient);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.3;
+    }
+
+    .hero p {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+      margin-bottom: 0;
+    }
+
+    /* Main Container */
+    .main-container {
+      max-width: 1000px;
+      margin: 1.2rem auto 2.5rem;
+      padding: 0 1.5rem;
+      position: relative;
+    }
+
+    .generator-card {
+      background: white;
+      border-radius: 0.8rem;
+      box-shadow: var(--shadow-lg);
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      position: relative;
+    }
+
+    .card-header {
+      background: var(--primary-gradient);
+      padding: 1.2rem;
+      text-align: center;
+      color: white;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .card-header h2 {
+      font-size: 1.2rem;
+      font-weight: 700;
+      margin-bottom: 0.2rem;
+      position: relative;
+    }
+
+    .card-header p {
+      opacity: 0.9;
+      position: relative;
+      font-size: 0.8rem;
+    }
+
+    .card-body {
+      padding: 1.8rem;
+    }
+
+    /* Tools Section Header */
+    .tools-header {
+      margin-bottom: 1.8rem;
+      padding-bottom: 0.8rem;
+      border-bottom: 2px solid var(--border-color);
+    }
+
+    .tools-header h3 {
+      font-size: 1.1rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.4rem;
+    }
+
+    .tools-header p {
+      font-size: 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    /* Upload Section - Side by Side Layout */
+    .upload-section {
+      margin-bottom: 1.8rem;
+    }
+
+    .upload-container {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1.2rem;
+      margin-bottom: 1.2rem;
+    }
+
+    .upload-area {
+      border: 2px dashed var(--border-color);
+      border-radius: 0.6rem;
+      padding: 1.5rem 1.2rem;
+      text-align: center;
+      background: var(--secondary-gradient);
+      transition: all 0.3s ease;
+      cursor: pointer;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .upload-area:hover {
+      border-color: var(--accent-color);
+      background: rgba(59, 130, 246, 0.05);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .upload-area.dragover {
+      border-color: var(--success-color);
+      background: rgba(16, 185, 129, 0.05);
+      transform: scale(1.02);
+    }
+
+    .upload-icon {
+      width: 2.5rem;
+      height: 2.5rem;
+      margin: 0 auto 0.8rem;
+      background: var(--primary-gradient);
+      border-radius: 0.6rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-size: 1.1rem;
+    }
+
+    .upload-area input[type="file"] {
+      display: none;
+    }
+
+    .upload-text {
+      font-size: 0.9rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.4rem;
+    }
+
+    .upload-subtext {
+      color: var(--text-secondary);
+      font-size: 0.7rem;
+    }
+
+    /* Available Files Browser */
+    .available-files {
+      border: 2px solid var(--border-color);
+      border-radius: 0.6rem;
+      background: white;
+      overflow: hidden;
+    }
+
+    .available-files-header {
+      background: var(--secondary-gradient);
+      padding: 0.8rem 1rem;
+      border-bottom: 1px solid var(--border-color);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+
+    .available-files-header h4 {
+      font-size: 0.8rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .refresh-btn {
+      background: none;
+      border: none;
+      color: var(--accent-color);
+      cursor: pointer;
+      padding: 0.2rem;
+      border-radius: 0.2rem;
+      transition: all 0.3s ease;
+      font-size: 0.8rem;
+    }
+
+    .refresh-btn:hover {
+      background: rgba(59, 130, 246, 0.1);
+    }
+
+    .available-files-list {
+      max-height: 180px;
+      overflow-y: auto;
+      padding: 0.4rem;
+    }
+
+    .available-file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem;
+      border-radius: 0.4rem;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      margin-bottom: 0.2rem;
+    }
+
+    .available-file-item:hover {
+      background: rgba(59, 130, 246, 0.05);
+    }
+
+    .available-file-item.selected {
+      background: rgba(59, 130, 246, 0.1);
+      border: 1px solid var(--accent-color);
+    }
+
+    .available-file-info {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .available-file-icon {
+      width: 1.8rem;
+      height: 1.8rem;
+      background: var(--secondary-gradient);
+      border-radius: 0.3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-color);
+      font-size: 0.8rem;
+    }
+
+    .available-file-details h5 {
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 0.1rem;
+      font-size: 0.75rem;
+    }
+
+    .available-file-size {
+      color: var(--text-secondary);
+      font-size: 0.65rem;
+    }
+
+    .select-file-btn {
+      background: var(--accent-color);
+      color: white;
+      border: none;
+      padding: 0.3rem 0.6rem;
+      border-radius: 0.3rem;
+      cursor: pointer;
+      font-size: 0.7rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .select-file-btn:hover {
+      background: #2563eb;
+    }
+
+    .select-file-btn.selected {
+      background: var(--success-color);
+    }
+
+    /* File Preview */
+    .file-preview {
+      display: none;
+      background: rgba(59, 130, 246, 0.05);
+      border-radius: 0.6rem;
+      padding: 0.8rem;
+      margin-top: 0.8rem;
+      border-left: 3px solid var(--accent-color);
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0.6rem;
+      background: white;
+      border-radius: 0.4rem;
+      margin-bottom: 0.4rem;
+      box-shadow: var(--shadow-sm);
+      transition: all 0.3s ease;
+    }
+
+    .file-item:hover {
+      transform: translateX(2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .file-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .file-info {
+      display: flex;
+      align-items: center;
+      gap: 0.6rem;
+    }
+
+    .file-icon {
+      width: 1.8rem;
+      height: 1.8rem;
+      background: var(--secondary-gradient);
+      border-radius: 0.3rem;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: var(--accent-color);
+      font-size: 0.8rem;
+    }
+
+    .file-details h4 {
+      font-weight: 500;
+      color: var(--text-primary);
+      margin-bottom: 0.1rem;
+      font-size: 0.75rem;
+    }
+
+    .file-size {
+      color: var(--text-secondary);
+      font-size: 0.65rem;
+    }
+
+    .remove-file {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--error-color);
+      border: none;
+      padding: 0.3rem 0.6rem;
+      border-radius: 0.3rem;
+      cursor: pointer;
+      font-size: 0.7rem;
+      font-weight: 500;
+      transition: all 0.3s ease;
+    }
+
+    .remove-file:hover {
+      background: var(--error-color);
+      color: white;
+    }
+
+    /* Form Elements */
+    .form-group {
+      margin-bottom: 1.2rem;
+    }
+
+    label {
+      display: block;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 0.4rem;
+      font-size: 0.8rem;
+    }
+
+    /* Diagram Type Cards */
+    .diagram-options {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 0.8rem;
+      margin-top: 0.6rem;
+    }
+
+    .diagram-card {
+      padding: 1rem;
+      border: 2px solid var(--border-color);
+      border-radius: 0.6rem;
+      text-align: center;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      background: white;
+    }
+
+    .diagram-card:hover {
+      border-color: var(--accent-color);
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-md);
+    }
+
+    .diagram-card.selected {
+      border-color: var(--accent-color);
+      background: rgba(59, 130, 246, 0.05);
+    }
+
+    .diagram-card i {
+      font-size: 1.3rem;
+      color: var(--accent-color);
+      margin-bottom: 0.6rem;
+    }
+
+    .diagram-card h3 {
+      font-weight: 600;
+      margin-bottom: 0.3rem;
+      font-size: 0.8rem;
+    }
+
+    .diagram-card p {
+      color: var(--text-secondary);
+      font-size: 0.7rem;
+      line-height: 1.4;
+    }
+
+    /* Button */
+    .btn-container {
+      text-align: center;
+      margin-top: 1.5rem;
+    }
+
+    .generate-btn {
+      background: var(--primary-gradient);
+      color: white;
+      padding: 0.8rem 1.8rem;
+      border: none;
+      border-radius: 0.5rem;
+      cursor: pointer;
+      font-size: 0.8rem;
+      font-weight: 600;
+      transition: all 0.3s ease;
+      box-shadow: var(--shadow-md);
+      position: relative;
+      overflow: hidden;
+      min-width: 160px;
+    }
+
+    .generate-btn::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+      transition: left 0.6s ease;
+    }
+
+    .generate-btn:hover {
+      transform: translateY(-2px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .generate-btn:hover::before {
+      left: 100%;
+    }
+
+    .generate-btn:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+
+    /* Loading Spinner */
+    .loading {
+      display: none;
+      text-align: center;
+      margin-top: 0.8rem;
+      padding: 1rem;
+      background: rgba(59, 130, 246, 0.05);
+      border-radius: 0.6rem;
+    }
+
+    .spinner {
+      width: 1.3rem;
+      height: 1.3rem;
+      border: 2px solid rgba(59, 130, 246, 0.1);
+      border-top: 2px solid var(--accent-color);
+      border-radius: 50%;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 0.6rem;
+    }
+
+    @keyframes spin {
+      0% { transform: rotate(0deg); }
+      100% { transform: rotate(360deg); }
+    }
+
+    .loading p {
+      color: var(--text-secondary);
+      font-weight: 500;
+      font-size: 0.8rem;
+    }
+
+    /* Success/Error Messages */
+    .message {
+      padding: 0.8rem;
+      border-radius: 0.5rem;
+      margin-top: 0.8rem;
+      display: none;
+      font-size: 0.8rem;
+    }
+
+    .message.success {
+      background: rgba(16, 185, 129, 0.1);
+      border: 1px solid var(--success-color);
+      color: var(--success-color);
+    }
+
+    .message.error {
+      background: rgba(239, 68, 68, 0.1);
+      border: 1px solid var(--error-color);
+      color: var(--error-color);
+    }
+
+    /* Footer */
+    footer {
+      background: var(--text-primary);
+      color: white;
+      text-align: center;
+      padding: 1.2rem;
+      margin-top: 2.5rem;
+    }
+
+    footer p {
+      opacity: 0.8;
+      font-size: 0.8rem;
+    }
+
+    /* Empty State */
+    .empty-state {
+      text-align: center;
+      padding: 1.5rem 0.8rem;
+      color: var(--text-secondary);
+    }
+
+    .empty-state i {
+      font-size: 1.5rem;
+      margin-bottom: 0.6rem;
+      opacity: 0.5;
+    }
+
+    .empty-state p {
+      font-size: 0.75rem;
+    }
+
+    .section-title {
+      font-size: 0.8rem;
+      margin-bottom: 0.6rem;
+      color: var(--text-primary);
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    /* Responsive Design */
+    @media (max-width: 768px) {
+      .nav-links {
+        display: none;
+      }
+
+      .hero h1 {
+        font-size: 1.3rem;
+      }
+
+      .upload-container {
+        grid-template-columns: 1fr;
+        gap: 0.8rem;
+      }
+
+      .diagram-options {
+        grid-template-columns: 1fr;
+      }
+
+      .upload-area {
+        padding: 1.2rem 0.8rem;
+      }
+
+      .card-body {
+        padding: 1.2rem;
+      }
+
+      nav {
+        padding: 0.4rem 1rem;
+      }
+    }
+
+    @media (max-width: 480px) {
+      .hero h1 {
+        font-size: 1.2rem;
+      }
+
+      .main-container {
+        padding: 0 0.8rem;
+      }
+
+      .card-body {
+        padding: 1rem;
+      }
+
+      .generate-btn {
+        width: 100%;
+      }
+
+      body {
+        font-size: 12px;
+      }
+    }
+
+    /* Animations */
+    .fade-in {
+      animation: fadeIn 0.6s ease-out;
+    }
+
+    @keyframes fadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(15px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .pulse {
+      animation: pulse 2s infinite;
+    }
+
+    @keyframes pulse {
+      0% { transform: scale(1); }
+      50% { transform: scale(1.02); }
+      100% { transform: scale(1); }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Header -->
+  <header>
+    <nav>
+      <div class="logo">
+        <i class="fas fa-project-diagram"></i>
+        <span>NIDD</span>
+      </div>
+      <ul class="nav-links">
+        <li><a href="#home">Home</a></li>
+        <li><a href="#docs">Docs</a></li>
+        <li><a href="#about">About</a></li>
+      </ul>
+    </nav>
+  </header>
+
+  <!-- Main Content -->
+  <div class="main-container">
+    <div class="generator-card fade-in">
+      <div class="card-header">
+        <h2>Generate Your UML Diagram</h2>
+        <p>Upload Excel files or select from available files</p>
+      </div>
+
+      <div class="card-body">   
+        <form id="upload-form">
+          <!-- Upload Section -->
+          <div class="upload-section">
+            <label for="data-source" style="margin-bottom: 0.8rem;">Data Source:</label>
+            
+            <div class="upload-container">
+              <!-- Upload New Files -->
+              <div>
+                <div class="section-title">
+                  <i class="fas fa-upload"></i>&nbsp; Upload New Files
+                </div>
+                <label class="upload-area" id="upload-area">
+                  <div class="upload-icon">
+                    <i class="fas fa-cloud-upload-alt"></i>
+                  </div>
+                  <div class="upload-text">Drop Excel files here</div>
+                  <div class="upload-subtext">or click to browse • .xlsx, .xls • Max 10MB</div>
+                  <input type="file" id="excel_files" name="excel_files" multiple accept=".xlsx,.xls,.xlsm" />
+                </label>
+              </div>
+
+              <!-- Available Files -->
+              <div>
+                <div class="section-title">
+                  <i class="fas fa-folder-open"></i>&nbsp; Available Files
+                </div>
+                <div class="available-files">
+                  <div class="available-files-header">
+                    <h4><i class="fas fa-server"></i>&nbsp; Uploads Folder</h4>
+                    <button type="button" class="refresh-btn" id="refresh-files" title="Refresh">
+                      <i class="fas fa-sync-alt"></i>
+                    </button>
+                  </div>
+                  <div class="available-files-list" id="available-files-list">
+                    <div class="empty-state">
+                      <i class="fas fa-folder-open"></i>
+                      <p>Loading files...</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <!-- File Preview -->
+            <div class="file-preview" id="file-preview">
+              <div class="section-title">
+                <i class="fas fa-file-check"></i>&nbsp; Selected Files
+              </div>
+              <div id="file-list"></div>
+            </div>
+          </div>
+
+          <!-- Diagram Type Selection -->
+          <div class="form-group">
+            <label><i class="fas fa-chart-bar"></i>&nbsp; Diagram Type:</label>
+            <div class="diagram-options">
+              <div class="diagram-card" data-type="uml">
+                <i class="fas fa-sitemap"></i>
+                <h3>Standard UML</h3>
+                <p>Traditional UML class diagrams with relationships and hierarchies</p>
+              </div>
+              <div class="diagram-card" data-type="parameterized">
+                <i class="fas fa-network-wired"></i>
+                <h3>Parameter Relationships</h3>
+                <p>Visualize parameter dependencies and data flow relationships</p>
+              </div>
+            </div>
+            <input type="hidden" id="diagram-type" name="diagram_type" required>
+          </div>
+
+          <!-- Submit Button -->
+          <div class="btn-container">
+            <button type="submit" class="generate-btn" id="generate-btn">
+              <i class="fas fa-upload"></i>&nbsp; Select Files First
+            </button>
+          </div>
+
+          <!-- Loading State -->
+          <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Processing files and generating diagram...</p>
+          </div>
+
+          <!-- Message Display -->
+          <div class="message" id="message"></div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>&copy; 2025 UML Generator. Professional diagram generation made simple.</p>
+  </footer>
+
+  <script>
+    const form = document.getElementById("upload-form");
+    const uploadArea = document.getElementById("upload-area");
+    const fileInput = document.getElementById("excel_files");
+    const filePreview = document.getElementById("file-preview");
+    const fileList = document.getElementById("file-list");
+    const availableFilesList = document.getElementById("available-files-list");
+    const refreshBtn = document.getElementById("refresh-files");
+    const loading = document.getElementById("loading");
+    const message = document.getElementById("message");
+    const diagramTypeInput = document.getElementById("diagram-type");
+    const generateBtn = document.getElementById("generate-btn");
+    
+    let selectedFiles = [];
+    let availableFiles = [];
+    let selectedAvailableFiles = [];
+    let selectedDiagramType = '';
+
+    // Show message function
+    function showMessage(text, type) {
+      message.textContent = text;
+      message.className = `message ${type}`;
+      message.style.display = 'block';
+      setTimeout(() => {
+        message.style.display = 'none';
+      }, 5000);
+    }
+
+    // Load available files from uploads folder
+    async function loadAvailableFiles() {
+      try {
+        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
+        
+        const response = await fetch('/get-available-files');
+        const data = await response.json();
+        
+        if (data.success) {
+          availableFiles = data.files || [];
+        } else {
+          availableFiles = [];
+          console.error('Failed to load files:', data.error);
+        }
+        
+        displayAvailableFiles();
+      } catch (error) {
+        console.error('Failed to load available files:', error);
+        availableFiles = [];
+        displayAvailableFiles();
+      } finally {
+        refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
+      }
+    }
+
+    // Display available files
+    function displayAvailableFiles() {
+      if (availableFiles.length === 0) {
+        availableFilesList.innerHTML = `
+          <div class="empty-state">
+            <i class="fas fa-folder-open"></i>
+            <p>No files found in uploads folder</p>
+          </div>
+        `;
+        return;
+      }
+
+      availableFilesList.innerHTML = '';
+      availableFiles.forEach((file, index) => {
+        const isSelected = selectedAvailableFiles.find(f => f.name === file.name);
+        const fileItem = document.createElement('div');
+        fileItem.className = `available-file-item ${isSelected ? 'selected' : ''}`;
+        fileItem.innerHTML = `
+          <div class="available-file-info">
+            <div class="available-file-icon">
+              <i class="fas fa-file-excel"></i>
+            </div>
+            <div class="available-file-details">
+              <h5>${file.name}</h5>
+              <div class="available-file-size">${(file.size / 1024).toFixed(1)} KB</div>
+            </div>
+          </div>
+          <button type="button" class="select-file-btn ${isSelected ? 'selected' : ''}" onclick="selectAvailableFile(${index})">
+            ${isSelected ? 'Selected' : 'Select'}
+          </button>
+        `;
+        availableFilesList.appendChild(fileItem);
+      });
+    }
+
+    // Select available file
+    function selectAvailableFile(index) {
+      const file = availableFiles[index];
+      const existingIndex = selectedAvailableFiles.findIndex(f => f.name === file.name);
+      
+      if (existingIndex === -1) {
+        selectedAvailableFiles.push(file);
+      } else {
+        selectedAvailableFiles.splice(existingIndex, 1);
+      }
+      
+      displayAvailableFiles();
+      updateSelectedFiles();
+      updateGenerateButton();
+    }
+
+    // Diagram type selection
+    document.querySelectorAll('.diagram-card').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.diagram-card').forEach(c => c.classList.remove('selected'));
+        card.classList.add('selected');
+        selectedDiagramType = card.getAttribute('data-type');
+        diagramTypeInput.value = selectedDiagramType;
+        updateGenerateButton();
+      });
+    });
+
+    // Handle file input change
+    fileInput.addEventListener("change", (event) => {
+      selectedFiles = Array.from(event.target.files);
+      updateSelectedFiles();
+      updateGenerateButton();
+    });
+
+    // Update selected files preview
+    function updateSelectedFiles() {
+      if (selectedFiles.length === 0 && selectedAvailableFiles.length === 0) {
+        filePreview.style.display = "none";
+        return;
+      }
+
+      fileList.innerHTML = "";
+
+      [...selectedFiles, ...selectedAvailableFiles].forEach((file, index) => {
+        const fileItem = document.createElement("div");
+        fileItem.className = "file-item";
+        fileItem.innerHTML = `
+          <div class="file-info">
+            <div class="file-icon"><i class="fas fa-file-excel"></i></div>
+            <div class="file-details">
+              <h4>${file.name || file.filename}</h4>
+              <div class="file-size">${(file.size / 1024).toFixed(1)} KB</div>
+            </div>
+          </div>
+          <button type="button" class="remove-file" onclick="removeFile(${index})">Remove</button>
+        `;
+        fileList.appendChild(fileItem);
+      });
+
+      filePreview.style.display = "block";
+    }
+
+    // Update generate button state
+    function updateGenerateButton() {
+      const hasFiles = selectedFiles.length > 0 || selectedAvailableFiles.length > 0;
+      const hasDiagramType = selectedDiagramType !== '';
+      
+      if (!hasFiles) {
+        generateBtn.disabled = true;
+        generateBtn.innerHTML = `<i class="fas fa-upload"></i>&nbsp; Select Files First`;
+      } else if (!hasDiagramType) {
+        generateBtn.disabled = true;
+        generateBtn.innerHTML = `<i class="fas fa-chart-bar"></i>&nbsp; Select Diagram Type`;
+      } else {
+        generateBtn.disabled = false;
+        const diagramName = selectedDiagramType === 'uml' ? 'UML Diagram' : 'Parameter View';
+        generateBtn.innerHTML = `<i class="fas fa-play"></i>&nbsp; Generate ${diagramName}`;
+      }
+    }
+
+    // Remove selected file
+    function removeFile(index) {
+      if (index < selectedFiles.length) {
+        selectedFiles.splice(index, 1);
+      } else {
+        const adjustedIndex = index - selectedFiles.length;
+        selectedAvailableFiles.splice(adjustedIndex, 1);
+      }
+      updateSelectedFiles();
+      updateGenerateButton();
+      displayAvailableFiles(); // Refresh the available files display
+    }
+
+    // Drag & Drop behavior
+    uploadArea.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      uploadArea.classList.add("dragover");
+    });
+
+    uploadArea.addEventListener("dragleave", () => {
+      uploadArea.classList.remove("dragover");
+    });
+
+    uploadArea.addEventListener("drop", (e) => {
+      e.preventDefault();
+      uploadArea.classList.remove("dragover");
+      const files = Array.from(e.dataTransfer.files).filter(f =>
+        f.name.endsWith(".xlsx") || f.name.endsWith(".xls") || f.name.endsWith(".xlsm")
+      );
+      selectedFiles = selectedFiles.concat(files);
+      updateSelectedFiles();
+      updateGenerateButton();
+    });
+
+    // Handle form submit - UPDATED to handle both new uploads and available files
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      if (selectedFiles.length === 0 && selectedAvailableFiles.length === 0) {
+        showMessage("Please select or upload at least one file", "error");
+        return;
+      }
+
+      if (!selectedDiagramType) {
+        showMessage("Please select a diagram type", "error");
+        return;
+      }
+
+      try {
+        loading.style.display = "block";
+        generateBtn.disabled = true;
+
+        // If only available files are selected, use the new endpoint
+        if (selectedFiles.length === 0 && selectedAvailableFiles.length > 0) {
+          const response = await fetch("/select-available-files", {
+            method: "POST",
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              filenames: selectedAvailableFiles.map(f => f.name),
+              diagram_type: selectedDiagramType
+            })
+          });
+
+          const result = await response.json();
+          
+          if (result.success) {
+            showMessage(result.message, "success");
+            setTimeout(() => {
+              window.location.href = result.redirect;
+            }, 1000);
+          } else {
+            showMessage(result.error || "Failed to process files", "error");
+          }
+        } else {
+          // Handle new file uploads (existing logic)
+          const formData = new FormData();
+          selectedFiles.forEach(file => formData.append("excel_files", file));
+          
+          // Also include selected available files
+          selectedAvailableFiles.forEach(file => {
+            formData.append("available_files", file.name);
+          });
+          
+          formData.append("diagram_type", selectedDiagramType);
+
+          const response = await fetch("/upload-main", {
+            method: "POST",
+            body: formData
+          });
+
+          if (response.ok) {
+            const result = await response.json();
+            if (result.success) {
+              showMessage("Files processed successfully!", "success");
+              setTimeout(() => {
+                if (selectedDiagramType === 'uml') {
+                  window.location.href = '/umldiagram.html';
+                } else {
+                  window.location.href = '/parameter.html';
+                }
+              }, 1000);
+            } else {
+              showMessage(result.error || "Upload failed", "error");
+            }
+          } else {
+            const errorText = await response.text();
+            showMessage(errorText || "Upload failed", "error");
+          }
+        }
+      } catch (error) {
+        console.error(error);
+        showMessage("Upload failed: " + error.message, "error");
+      } finally {
+        loading.style.display = "none";
+        generateBtn.disabled = false;
+      }
+    });
+
+    // Initial setup
+    loadAvailableFiles();
+    refreshBtn.addEventListener("click", loadAvailableFiles);
+    updateGenerateButton();
+  </script>
+</body>
+</html>
