@@ -572,11 +572,7 @@
           </div>
 
           <div class="btn-group">
-            <button id="load-classes" class="btn-secondary">
-              <i class="fas fa-refresh"></i>
-              Load Classes
-            </button>
-            <button id="generate-uml" class="btn-primary" disabled>
+            <button id="generate-uml" class="btn-primary">
               <i class="fas fa-play"></i>
               Generate UML Diagram
             </button>
@@ -608,13 +604,12 @@
 
   <!-- JavaScript Logic -->
   <script>
-    let classList = [];
+let classList = [];
 let isInitialized = false;
 
 // DOM Elements
 const parameterInput = document.getElementById('parameter-input');
 const depthInput = document.getElementById('depth-input');
-const loadClassesBtn = document.getElementById('load-classes');
 const generateUmlBtn = document.getElementById('generate-uml');
 const downloadImageBtn = document.getElementById('download-image');
 const statusMessage = document.getElementById('status-message');
@@ -638,7 +633,7 @@ function showLoading(show = true) {
 function updateButtonStates() {
   const hasValidClass = parameterInput.value && classList.includes(parameterInput.value);
   const hasDiagram = document.querySelector('#uml-diagram .mermaid');
-  generateUmlBtn.disabled = !hasValidClass;
+  generateUmlBtn.disabled = !parameterInput.value; // always clickable if user typed something
   downloadImageBtn.disabled = !hasDiagram;
 }
 
@@ -655,31 +650,10 @@ function renderMermaid(uml) {
   setTimeout(() => mermaid.init(undefined, newDiagram).then(updateButtonStates), 100);
 }
 
-// Initialize page
-async function initializePage() {
-  try {
-    showLoading(true);
-    initialStatus.style.display = 'block';
-    await loadClasses();
-    if (classList.length > 0) {
-      initialStatus.textContent = `Successfully loaded ${classList.length} classes from your uploaded files.`;
-      initialStatus.className = 'status-message status-success';
-      isInitialized = true;
-    } else {
-      initialStatus.textContent = 'No classes found. Please make sure your Excel files contain valid data.';
-      initialStatus.className = 'status-message status-error';
-    }
-  } catch (error) {
-    initialStatus.textContent = 'Failed to load files.';
-    initialStatus.className = 'status-message status-error';
-  } finally {
-    showLoading(false);
-    updateButtonStates();
-  }
-}
-
 // Load classes from uploaded files
 async function loadClasses() {
+  if (isInitialized && classList.length > 0) return; // skip if already loaded
+
   try {
     showLoading(true);
     showStatus('Loading classes...', 'info');
@@ -696,6 +670,7 @@ async function loadClasses() {
       if (classList.length > 0) {
         new Awesomplete(parameterInput, { list: classList, minChars: 1, autoFirst: true, maxItems: 10 });
         showStatus(`Successfully loaded ${classList.length} classes!`, 'success');
+        isInitialized = true;
       } else {
         showStatus('No classes found.', 'error');
       }
@@ -714,12 +689,20 @@ async function generateUML() {
   const depth = parseInt(depthInput.value) || 1;
 
   if (!selectedClass) return showStatus('Please enter a class name.', 'error');
-  if (!classList.includes(selectedClass)) return showStatus('Select a valid class.', 'error');
 
   try {
     showLoading(true);
-    showStatus('Generating UML diagram...', 'info');
+    showStatus('Processing...', 'info');
 
+    // Load classes if not loaded
+    await loadClasses();
+
+    if (!classList.includes(selectedClass)) {
+      showStatus('Select a valid class from the suggestions.', 'error');
+      return;
+    }
+
+    // Fetch UML diagram
     const response = await fetch('/uml', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -732,7 +715,7 @@ async function generateUML() {
       showStatus('UML diagram generated successfully!', 'success');
     } else throw new Error('No UML data received');
   } catch (error) {
-    showStatus(`Error generating UML: ${error.message}`, 'error');
+    showStatus(`Error: ${error.message}`, 'error');
   } finally {
     showLoading(false);
   }
@@ -762,14 +745,16 @@ async function downloadDiagram() {
 }
 
 // Event Listeners
-loadClassesBtn.addEventListener('click', loadClasses);
 generateUmlBtn.addEventListener('click', generateUML);
 downloadImageBtn.addEventListener('click', downloadDiagram);
 parameterInput.addEventListener('input', updateButtonStates);
 depthInput.addEventListener('change', updateButtonStates);
 
-// Initialize on page load
-document.addEventListener('DOMContentLoaded', initializePage);
+// Initialize page (just loads classes in background for suggestion box)
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadClasses();
+});
+
 
   </script>
 </body>

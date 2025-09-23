@@ -517,6 +517,7 @@
         transform: translateY(0);
       }
     }
+    
   </style>
 </head>
 <body>
@@ -577,15 +578,12 @@
           </div>
 
           <div class="btn-group">
-            <button id="fetch-relation" class="btn-primary" disabled>
+            <button id="fetch-relation" class="btn-primary">
               <i class="fas fa-network-wired"></i>
               Show Related Parameters
             </button>
-            <button id="refresh-parameters" class="btn-secondary">
-              <i class="fas fa-refresh"></i>
-              Refresh Parameters
-            </button>
           </div>
+
         </div>
       </div>
     </div>
@@ -608,164 +606,184 @@
   </div>
 
   <script>
-  // DOM Elements
-  const parameterInput = document.getElementById('parameter-input');
-  const fetchRelationBtn = document.getElementById('fetch-relation');
-  const refreshBtn = document.getElementById('refresh-parameters');
-  const statusMessage = document.getElementById('status-message');
-  const loading = document.getElementById('loading');
-  const relationDisplay = document.getElementById('relation-display');
+// DOM Elements
+const parameterInput = document.getElementById('parameter-input');
+const fetchRelationBtn = document.getElementById('fetch-relation');
+const statusMessage = document.getElementById('status-message');
+const loading = document.getElementById('loading');
+const relationDisplay = document.getElementById('relation-display');
 
-  let availableParameters = [];
+let availableParameters = [];
+let awesompleteInstance = null; // Store Awesomplete instance
 
-  // Utility Functions
-  function showStatus(message, type = 'info') {
-    statusMessage.textContent = message;
-    statusMessage.className = `status-message status-${type}`;
-    statusMessage.style.display = 'block';
+// Utility Functions
+function showStatus(message, type = 'info') {
+  statusMessage.textContent = message;
+  statusMessage.className = `status-message status-${type}`;
+  statusMessage.style.display = 'block';
+  
+  if (type === 'success' || type === 'error') {
+    setTimeout(() => {
+      statusMessage.style.display = 'none';
+    }, 5000);
+  }
+}
+
+function showLoading(show = true) {
+  loading.style.display = show ? 'block' : 'none';
+}
+
+// Load parameters from server
+async function loadParameters(preserveInput = true) {
+  const previousValue = preserveInput ? parameterInput.value.trim() : "";
+
+  try {
+    showLoading(true);
+    showStatus('Refreshing available parameters...', 'info');
+
+    const response = await fetch('/get-parameters');
+    const data = await response.json();
     
-    // Auto-hide after 5 seconds for success/error messages
-    if (type === 'success' || type === 'error') {
-      setTimeout(() => {
-        statusMessage.style.display = 'none';
-      }, 5000);
-    }
-  }
+    if (data.parameters) {
+      availableParameters = data.parameters;
 
-  function showLoading(show = true) {
-    loading.style.display = show ? 'block' : 'none';
-  }
-
-  function updateButtonStates() {
-    const hasParameter = parameterInput.value.trim() !== '';
-    const hasValidParameter = availableParameters.includes(parameterInput.value.trim());
-
-    fetchRelationBtn.disabled = !hasValidParameter;
-  }
-
-  // Load parameters from server
-  async function loadParameters() {
-    try {
-      showLoading(true);
-      showStatus('Loading available parameters...', 'info');
-
-      const response = await fetch('/get-parameters');
-      const data = await response.json();
-      
-      if (data.parameters) {
-        availableParameters = data.parameters;
-        
-        // Initialize autocomplete
-        new Awesomplete(parameterInput, {
+      // Initialize or update Awesomplete instance
+      if (!awesompleteInstance) {
+        awesompleteInstance = new Awesomplete(parameterInput, {
           list: availableParameters,
           minChars: 1,
           autoFirst: true,
           maxItems: 10
         });
-        
-        showStatus(`Successfully loaded ${availableParameters.length} parameters!`, 'success');
       } else {
-        showStatus('No parameters found in the uploaded files.', 'error');
+        awesompleteInstance.list = availableParameters;
       }
-    } catch (error) {
-      showStatus(`Error loading parameters: ${error.message}`, 'error');
-      console.error('Failed to load parameters', error);
-    } finally {
-      showLoading(false);
-      updateButtonStates();
+
+      // Restore previous input if it still exists
+      if (previousValue && availableParameters.includes(previousValue)) {
+        parameterInput.value = previousValue;
+      }
+
+      showStatus(`Parameters refreshed (${availableParameters.length} found).`, 'success');
+    } else {
+      availableParameters = [];
+      showStatus('No parameters found in the uploaded files.', 'error');
     }
+  } catch (error) {
+    availableParameters = [];
+    showStatus(`Error loading parameters: ${error.message}`, 'error');
+    console.error('Failed to load parameters', error);
+  } finally {
+    showLoading(false);
+  }
+}
+
+// Fetch parameter relations
+async function fetchRelation(param) {
+  if (!param) {
+    showStatus('Please enter a parameter name.', 'error');
+    return;
   }
 
-  // Fetch parameter relations
-  async function fetchRelation(param) {
-    if (!param) {
-      showStatus('Please enter a parameter name.', 'error');
-      return;
-    }
+  if (!availableParameters.includes(param)) {
+    showStatus('Please select a valid parameter from the dropdown.', 'error');
+    return;
+  }
 
-    if (!availableParameters.includes(param)) {
-      showStatus('Please select a valid parameter from the dropdown.', 'error');
-      return;
-    }
+  try {
+    showLoading(true);
+    showStatus('Fetching parameter relations...', 'info');
 
-    try {
-      showLoading(true);
-      showStatus('Fetching parameter relations...', 'info');
+    const response = await fetch('/get-relation', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({parameter: param})
+    });
+    
+    const data = await response.json();
 
-      const response = await fetch('/get-relation', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/json'},
-        body: JSON.stringify({parameter: param})
-      });
-      
-      const data = await response.json();
+    relationDisplay.innerHTML = ""; // Clear previous content
 
-      relationDisplay.innerHTML = ""; // Clear previous content
+    if (data.relation) {
+      const relations = data.relation
+        .split(/[,;]+/)
+        .map(r => r.trim().replace(/::public/g, ""))
+        .filter(r => r);
 
-      if (data.relation) {
-        // Process relations
-        const relations = data.relation
-          .split(/[,;]+/)
-          .map(r => r.trim().replace(/::public/g, ""))
-          .filter(r => r);
+      if (relations.length > 0) {
+        const container = document.createElement("div");
+        container.className = "relations-list";
+        
+        const title = document.createElement("h4");
+        title.textContent = `Relations for: ${param}`;
+        title.style.marginBottom = "1rem";
+        title.style.color = "var(--text-primary)";
+        title.style.fontSize = "0.9rem";
+        title.style.fontWeight = "600";
+        container.appendChild(title);
 
-        if (relations.length > 0) {
-          const container = document.createElement("div");
-          container.className = "relations-list";
-          
-          const title = document.createElement("h4");
-          title.textContent = `Relations for: ${param}`;
-          title.style.marginBottom = "1rem";
-          title.style.color = "var(--text-primary)";
-          title.style.fontSize = "0.9rem";
-          title.style.fontWeight = "600";
-          container.appendChild(title);
+        const ol = document.createElement("ol");
+        relations.forEach(rel => {
+          const li = document.createElement("li");
+          li.textContent = rel;
+          ol.appendChild(li);
+        });
 
-          const ol = document.createElement("ol");
-          relations.forEach(rel => {
-            const li = document.createElement("li");
-            li.textContent = rel;
-            ol.appendChild(li);
-          });
-
-          container.appendChild(ol);
-          relationDisplay.appendChild(container);
-          showStatus('Parameter relations loaded successfully!', 'success');
-        } else {
-          relationDisplay.innerHTML = `<div class="no-relations">No relations found for parameter: ${param}</div>`;
-          showStatus('No relations found for the selected parameter.', 'info');
-        }
-      } else if (data.error) {
-        relationDisplay.innerHTML = `<div class="error-message">Error: ${data.error}</div>`;
-        showStatus(`Error: ${data.error}`, 'error');
+        container.appendChild(ol);
+        relationDisplay.appendChild(container);
+        showStatus('Parameter relations loaded successfully!', 'success');
       } else {
         relationDisplay.innerHTML = `<div class="no-relations">No relations found for parameter: ${param}</div>`;
         showStatus('No relations found for the selected parameter.', 'info');
       }
-    } catch (error) {
-      relationDisplay.innerHTML = `<div class="error-message">Error fetching relation: ${error.message}</div>`;
-      showStatus(`Error fetching relations: ${error.message}`, 'error');
-      console.error('Error fetching relation:', error);
-    } finally {
-      showLoading(false);
-      updateButtonStates();
+    } else if (data.error) {
+      relationDisplay.innerHTML = `<div class="error-message">Error: ${data.error}</div>`;
+      showStatus(`Error: ${data.error}`, 'error');
+    } else {
+      relationDisplay.innerHTML = `<div class="no-relations">No relations found for parameter: ${param}</div>`;
+      showStatus('No relations found for the selected parameter.', 'info');
     }
+  } catch (error) {
+    relationDisplay.innerHTML = `<div class="error-message">Error fetching relation: ${error.message}</div>`;
+    showStatus(`Error fetching relations: ${error.message}`, 'error');
+    console.error('Error fetching relation:', error);
+  } finally {
+    showLoading(false);
+  }
+}
+
+// Event Listener for the button
+fetchRelationBtn.addEventListener('click', async () => {
+  const param = parameterInput.value.trim();
+
+  if (!param) {
+    showStatus("Please enter/select a parameter.", "error");
+    return;
   }
 
-  // Event Listeners
-  fetchRelationBtn.addEventListener('click', () => {
-    const param = parameterInput.value.trim();
+  // Refresh parameters first, preserving typed input
+  await loadParameters(true);
+
+  // Only fetch relation if parameter exists in updated list
+  if (availableParameters.includes(param)) {
     fetchRelation(param);
-  });
+  } else {
+    showStatus("Please select a valid parameter from the dropdown.", "error");
+  }
+});
 
-  refreshBtn.addEventListener('click', loadParameters);
-  parameterInput.addEventListener('input', updateButtonStates);
+// Input listener
+parameterInput.addEventListener('input', () => {
+  // No need to disable button anymore
+  // Just optional validation (can add styles if you want)
+});
 
-  // Initialize on page load
-  document.addEventListener('DOMContentLoaded', () => {
-    loadParameters();
-    updateButtonStates();
-  });
+// Initialize on page load
+document.addEventListener('DOMContentLoaded', async () => {
+  await loadParameters();
+});
+
+
 </script>
 
 
