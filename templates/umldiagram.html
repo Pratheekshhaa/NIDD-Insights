@@ -42,6 +42,8 @@
       --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
       --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
       --shadow-xl: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+      --class-banner-color: #4f46e5;
+      --class-banner-gradient: linear-gradient(135deg, #4f46e5 0%, #7c3aed 100%);
     }
 
     body {
@@ -419,6 +421,193 @@
       overflow: visible !important;
     }
 
+    /* Custom styling for UML diagram class name banners */
+    #uml-diagram .mermaid .node rect {
+      stroke: #e2e8f0 !important;
+      stroke-width: 2 !important;
+    }
+
+    /* Style the class name headers (bold text) with full width colored background */
+    #uml-diagram .mermaid .nodeLabel b {
+      background: var(--class-banner-gradient) !important;
+      color: white !important;
+      padding: 12px 0 !important;
+      border-radius: 8px 8px 0 0 !important;
+      display: block !important;
+      width: calc(100% + 20px) !important;
+      margin: -10px -10px 12px -10px !important;
+      font-weight: 700 !important;
+      font-size: 14px !important;
+      text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2) !important;
+      box-shadow: 0 2px 4px rgba(79, 70, 229, 0.15) !important;
+      text-align: center !important;
+      border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important;
+    }
+
+    /* Alternative approach: Style the entire class name section with full width */
+    #uml-diagram .mermaid .nodeLabel > span:first-child {
+      background: var(--class-banner-gradient) !important;
+      color: white !important;
+      padding: 14px 0 !important;
+      border-radius: 8px 8px 0 0 !important;
+      display: block !important;
+      width: calc(100% + 24px) !important;
+      margin: -12px -12px 15px -12px !important;
+      font-weight: 700 !important;
+      font-size: 15px !important;
+      text-shadow: 0 1px 3px rgba(0, 0, 0, 0.2) !important;
+      box-shadow: 0 3px 6px rgba(79, 70, 229, 0.2) !important;
+      text-align: center !important;
+      border-bottom: 3px solid rgba(255, 255, 255, 0.25) !important;
+    }
+
+    /* Legend Styles */
+    .legend-container {
+      position: absolute;
+      top: 1rem;
+      right: 1rem;
+      z-index: 50;
+    }
+
+    .legend-toggle {
+      background: var(--primary-gradient);
+      color: white;
+      border: none;
+      padding: 0.6rem 1rem;
+      border-radius: 0.5rem;
+      font-size: 0.75rem;
+      font-weight: 600;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 0.4rem;
+      box-shadow: var(--shadow-md);
+      transition: all 0.3s ease;
+    }
+
+    .legend-toggle:hover {
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .legend-panel {
+      position: absolute;
+      top: 100%;
+      right: 0;
+      margin-top: 0.5rem;
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: 0.8rem;
+      box-shadow: var(--shadow-xl);
+      padding: 1.2rem;
+      min-width: 300px;
+      transform: translateY(-10px);
+      opacity: 0;
+      visibility: hidden;
+      transition: all 0.3s ease;
+    }
+
+    .legend-panel.show {
+      transform: translateY(0);
+      opacity: 1;
+      visibility: visible;
+    }
+
+    .legend-panel h4 {
+      font-size: 0.9rem;
+      font-weight: 700;
+      color: var(--text-primary);
+      margin-bottom: 1rem;
+      text-align: center;
+      border-bottom: 2px solid var(--border-color);
+      padding-bottom: 0.5rem;
+    }
+
+    .legend-items {
+      display: flex;
+      flex-direction: column;
+      gap: 0.8rem;
+    }
+
+    .legend-item {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      font-size: 0.75rem;
+      padding: 0.4rem 0;
+    }
+
+    .legend-color {
+      width: 16px;
+      height: 16px;
+      border-radius: 3px;
+      flex-shrink: 0;
+    }
+
+    .legend-color.gray { background-color: #6b7280; }
+    .legend-color.green { background-color: #10b981; }
+    .legend-color.red { background-color: #ef4444; }
+
+    .legend-symbol {
+      font-weight: 700;
+      color: var(--text-primary);
+      min-width: 20px;
+    }
+
+    .legend-description {
+      color: var(--text-secondary);
+      font-weight: 500;
+    }
+
+    /* Close button for legend */
+    .legend-close {
+      position: absolute;
+      top: 0.8rem;
+      right: 0.8rem;
+      background: none;
+      border: none;
+      color: var(--text-secondary);
+      cursor: pointer;
+      font-size: 1rem;
+      width: 24px;
+      height: 24px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border-radius: 50%;
+      transition: all 0.2s ease;
+    }
+
+    .legend-close:hover {
+      background: var(--border-color);
+      color: var(--text-primary);
+    }
+
+    /* Enhanced styling for the class boxes */
+    #uml-diagram .mermaid .node {
+      filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.07)) !important;
+    }
+
+    /* Style the node backgrounds */
+    #uml-diagram .mermaid .node rect {
+      fill: #ffffff !important;
+      stroke: #d1d5db !important;
+      stroke-width: 1.5 !important;
+      rx: 8 !important;
+      ry: 8 !important;
+    }
+
+    /* Style the relationship arrows */
+    #uml-diagram .mermaid .edgePath path {
+      stroke: var(--class-banner-color) !important;
+      stroke-width: 2 !important;
+    }
+
+    #uml-diagram .mermaid .arrowheadPath {
+      fill: var(--class-banner-color) !important;
+      stroke: var(--class-banner-color) !important;
+    }
+
     /* Awesomplete styling */
     .awesomplete {
       width: 100%;
@@ -591,6 +780,46 @@
         <h3><i class="fas fa-sitemap"></i> UML Class Diagram</h3>
       </div>
       <div class="diagram-content">
+        <!-- Legend -->
+        <div class="legend-container">
+          <button class="legend-toggle" id="legend-toggle">
+            <i class="fas fa-info-circle"></i>
+            Legend
+          </button>
+          <div class="legend-panel" id="legend-panel">
+            <button class="legend-close" id="legend-close">
+              <i class="fas fa-times"></i>
+            </button>
+            <h4>Attribute Legend</h4>
+            <div class="legend-items">
+              <div class="legend-item">
+                <div class="legend-color gray"></div>
+                <span class="legend-description">Grey attribute represents "not modifiable"</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color green"></div>
+                <span class="legend-description">Green attribute "Online modifiable"</span>
+              </div>
+              <div class="legend-item">
+                <div class="legend-color red"></div>
+                <span class="legend-description">Red BTS/RAT Reset Needed</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-symbol">(M)</span>
+                <span class="legend-description">Mandatory Parameter</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-symbol">(O)</span>
+                <span class="legend-description">Optional Parameter</span>
+              </div>
+              <div class="legend-item">
+                <span class="legend-symbol">(S)</span>
+                <span class="legend-description">System Set value</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
         <div id="uml-diagram">
           <div class="diagram-placeholder">
             <i class="fas fa-sitemap"></i>
@@ -615,6 +844,26 @@ const downloadImageBtn = document.getElementById('download-image');
 const statusMessage = document.getElementById('status-message');
 const initialStatus = document.getElementById('initial-status');
 const loading = document.getElementById('loading');
+const legendToggle = document.getElementById('legend-toggle');
+const legendPanel = document.getElementById('legend-panel');
+const legendClose = document.getElementById('legend-close');
+
+// Legend functionality
+function toggleLegend() {
+  legendPanel.classList.toggle('show');
+}
+
+function closeLegend() {
+  legendPanel.classList.remove('show');
+}
+
+// Close legend when clicking outside
+document.addEventListener('click', function(event) {
+  const legendContainer = document.querySelector('.legend-container');
+  if (!legendContainer.contains(event.target)) {
+    closeLegend();
+  }
+});
 
 // Utility Functions
 function showStatus(message, type = 'info') {
@@ -749,6 +998,8 @@ generateUmlBtn.addEventListener('click', generateUML);
 downloadImageBtn.addEventListener('click', downloadDiagram);
 parameterInput.addEventListener('input', updateButtonStates);
 depthInput.addEventListener('change', updateButtonStates);
+legendToggle.addEventListener('click', toggleLegend);
+legendClose.addEventListener('click', closeLegend);
 
 // Initialize page (just loads classes in background for suggestion box)
 document.addEventListener('DOMContentLoaded', async () => {
