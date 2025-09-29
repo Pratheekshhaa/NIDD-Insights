@@ -21,47 +21,61 @@ uml_data = defaultdict(lambda: {
     "relationships": set()
 })
 
-# --------- Parameter Relation Finder ---------
-def load_excel_data(file_path):
-    """Load parameter data from a given Excel file"""
+# --------- Parameter Relation Finder (NEW LOGIC) ---------
+def detect_header(df, search_columns):
+    """Auto-detect header row by looking for columns that contain 'Parameter' or similar keywords"""
+    for i in range(min(10, len(df))):  # Check first 10 rows
+        row = df.iloc[i].astype(str).str.lower()
+        if any(keyword in row[j] for keyword in search_columns for j in range(len(row))):
+            return i
+    return 0  # fallback
+
+def load_excel_data(file_paths):
+    """Load parameter data from multiple Excel files using column D (index 3) for input and P (index 15) for relations"""
     global parameters_list, parameter_relations
     try:
-        df_sheets = pd.read_excel(file_path, sheet_name=None, engine='openpyxl')
         parameters_list = []
         parameter_relations = {}
-        
-        for sheet_name, df in df_sheets.items():
-            if df.shape[1] < 30:
-                continue
-                
-            df = df.rename(columns={
-                df.columns[1]: "MOC_Name",
-                df.columns[2]: "Parameter_Name",
-                df.columns[15]: "Related_Parameters"
-            })
-            
-            df_clean = df.dropna(subset=["MOC_Name", "Parameter_Name"], how='all')
-            
-            for _, row in df_clean.iterrows():
-                moc_name = str(row["MOC_Name"]).strip() if pd.notna(row["MOC_Name"]) else ""
-                param_name = str(row["Parameter_Name"]).strip() if pd.notna(row["Parameter_Name"]) else ""
-                related_params = str(row["Related_Parameters"]).strip() if pd.notna(row["Related_Parameters"]) else ""
-                
-                if param_name.lower() == "parameter name" or not param_name or param_name.lower() == 'nan':
+
+        for file_path in file_paths:
+            df_sheets = pd.read_excel(file_path, sheet_name=None, engine='openpyxl', header=None)
+
+            for sheet_name, df in df_sheets.items():
+                if df.shape[1] < 16:
                     continue
-                    
-                if param_name not in parameters_list:
-                    parameters_list.append(param_name)
-                    
-                if related_params and related_params.lower() != 'nan':
-                    parameter_relations[param_name] = related_params
-                else:
-                    parameter_relations[param_name] = "No related parameters found"
-        
+
+                header_row = detect_header(df, search_columns=["parameter", "relation"])
+                df.columns = df.iloc[header_row]
+                df = df.iloc[header_row + 1:].reset_index(drop=True)
+
+                col_d, col_p = df.columns[3], df.columns[15]
+                df_clean = df.dropna(subset=[col_d], how='all')
+
+                for _, row in df_clean.iterrows():
+                    param_name = str(row[col_d]).strip() if pd.notna(row[col_d]) else ""
+                    related_params = str(row[col_p]).strip() if pd.notna(row[col_p]) else ""
+
+                    if not param_name or param_name.lower() == 'nan':
+                        continue
+
+                    if param_name not in parameters_list:
+                        parameters_list.append(param_name)
+
+                    if related_params and related_params.lower() != 'nan':
+                        existing = parameter_relations.get(param_name, [])
+                        if isinstance(existing, str):
+                            existing = [] if existing == "No related parameters found" else [existing]
+                        new_rels = [r.strip() for r in related_params.split(";") if r.strip()]
+                        parameter_relations[param_name] = list(set(existing + new_rels))
+                    else:
+                        if param_name not in parameter_relations:
+                            parameter_relations[param_name] = "No related parameters found"
+
         parameters_list.sort()
     except Exception as e:
         print(f"Failed to load Excel: {e}")
 
+# --------- UML Diagram Generator (UNCHANGED FROM OLD CODE) ---------
 def load_uml_data(file_paths):
     """Load UML data from multiple Excel files"""
     global uml_data
@@ -82,7 +96,7 @@ def load_uml_data(file_paths):
                     
                 data = data.rename(columns={
                     data.columns[1]: "MOC_Name",
-                    data.columns[2]: "Parameter_Name",
+                    data.columns[2]: "Parameter_Name",  # KEPT AS COLUMN 2
                     data.columns[4]: "Data_Type",
                     data.columns[5]: "Parent_Parameter",
                     data.columns[25]: "Required_On_Creation",
@@ -160,29 +174,61 @@ def get_parameters():
 
 @app.route('/get-relation', methods=['POST'])
 def get_relation():
+    """NEW LOGIC - Returns direct and indirect relations with 4-level traversal"""
     try:
         data = request.get_json()
-        if not data:
-            return jsonify({"error": "No JSON data provided"}), 400
-        
-        param = data.get("parameter")
+        param = data.get("parameter", "").strip()
         if not param:
-            return jsonify({"error": "No parameter specified"}), 400
-        
-        relation = parameter_relations.get(param)
-        
-        if not relation:
-            for key, value in parameter_relations.items():
-                if key.lower() == param.lower():
-                    relation = value
-                    break
-                    
-        if not relation:
-            relation = "No relation found for this parameter."
+            return jsonify({"error": "No parameter provided"}), 400
+
+        file_paths = session.get('uploaded_files', [])
+        if not file_paths:
+            return jsonify({"error": "No Excel files uploaded"}), 400
+
+        direct_relations = set()
+        all_indirect = set()
+
+        for excel_path in file_paths:
+            # Read with automatic header detection (first row as header)
+            df = pd.read_excel(excel_path, engine="openpyxl")
+            if df.shape[1] < 16:
+                continue
+
+            # Use column D (index 3) and column P (index 15)
+            col_d, col_p = df.columns[3], df.columns[15]
             
-        return jsonify({"parameter": param, "relation": relation})
+            # Find direct relations for the parameter
+            direct_relations.update([
+                r.strip()
+                for rel in df.loc[df[col_d].astype(str).str.strip() == param, col_p].dropna().tolist()
+                for r in str(rel).split(";") if r and r.strip() and r.strip().lower() != 'nan'
+            ])
+
+            # Find indirect relations (4-level deep traversal)
+            visited = set([param])
+            level_relations = set([param])
+
+            for _ in range(4):
+                new_relations = set()
+                for current in level_relations:
+                    matches = df[df[col_p].astype(str).str.contains(current, na=False)][col_d].dropna().tolist()
+                    for rel in matches:
+                        for r in str(rel).split(";"):
+                            r = r.strip()
+                            if r and r.lower() != 'nan' and r not in visited:
+                                new_relations.add(r)
+                if not new_relations:
+                    break
+                visited.update(new_relations)
+                all_indirect.update(new_relations)
+                level_relations = new_relations
+
+        return jsonify({"direct": sorted(direct_relations), "indirect": sorted(all_indirect - {param})})
     except Exception as e:
-        return jsonify({"error": f"Server error: {str(e)}"}), 500
+        import traceback
+        print(f"Error in get_relation: {e}")
+        print(traceback.format_exc())
+        return jsonify({"error": str(e)}), 500
 
 @app.route('/reload-data', methods=['POST'])
 def reload_data():
@@ -191,7 +237,7 @@ def reload_data():
         if not file_paths:
             return jsonify({"success": False, "error": "No files uploaded"}), 400
         
-        load_excel_data(file_paths[0])
+        load_excel_data(file_paths)
         return jsonify({
             "success": True,
             "message": f"Data reloaded. Found {len(parameters_list)} parameters."
@@ -209,7 +255,7 @@ def test_data():
         "uploaded_files": file_paths
     })
 
-# --------- UML Diagram Generator ---------
+# --------- UML Diagram Generator (UNCHANGED) ---------
 @app.route('/umldiagram.html')
 def uml_ui():
     if 'uploaded_files' not in session or not session['uploaded_files']:
@@ -264,13 +310,13 @@ def upload_main():
         session['uploaded_files'] = file_paths
         session['diagram_type'] = diagram_type
 
-        # Load data based on diagram type using the corrected logic
+        # Load data based on diagram type
         if diagram_type == 'uml':
             classes = load_uml_data(file_paths)
-            load_excel_data(file_paths[0])  # Also load parameter data
+            load_excel_data(file_paths)  # Also load parameter data with ALL files
             return jsonify({"success": True, "redirect": url_for('uml_ui')})
         else:
-            load_excel_data(file_paths[0])
+            load_excel_data(file_paths)  # Load ALL files for parameters
             return jsonify({"success": True, "redirect": url_for('parameter_page')})
             
     except Exception as e:
@@ -313,17 +359,17 @@ def select_available_files():
         session['uploaded_files'] = file_paths
         session['diagram_type'] = diagram_type
 
-        # Load data based on diagram type using corrected logic
+        # Load data based on diagram type
         if diagram_type == 'uml':
             classes = load_uml_data(file_paths)
-            load_excel_data(file_paths[0])  # Also load parameter data
+            load_excel_data(file_paths)  # Also load parameter data with ALL files
             return jsonify({
                 "success": True,
                 "message": f"Files loaded successfully. Found {len(classes)} classes.",
                 "redirect": "/umldiagram.html"
             })
         else:
-            load_excel_data(file_paths[0])
+            load_excel_data(file_paths)  # Load ALL files for parameters
             return jsonify({
                 "success": True,
                 "message": f"Files loaded successfully. Found {len(parameters_list)} parameters.",
@@ -430,7 +476,6 @@ def generate_all_classes_uml():
         label_lines = [f"<b>{cls}</b>"]
         
         # Limit attributes to prevent diagram from being too crowded
-        # You can adjust this number or remove the limit entirely
         max_attrs = 5  # Show only first 5 attributes per class
         attrs_to_show = info["attributes"][:max_attrs]
         
