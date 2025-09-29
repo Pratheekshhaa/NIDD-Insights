@@ -473,21 +473,13 @@ def generate_all_classes_uml():
     # Add all classes with their attributes
     for cls, info in uml_data.items():
         safe_cls = cls.replace("/", "_").replace("-", "_").replace(".", "_")
-        label_lines = [f"<b>{cls}</b>"]
-        
-        # Limit attributes to prevent diagram from being too crowded
-        max_attrs = 5  # Show only first 5 attributes per class
-        attrs_to_show = info["attributes"][:max_attrs]
-        
+        label_lines = [f"<b>{cls}</b>"]      
+       
         label_lines = [f"<b>{cls}</b>", "<hr>"]
 
-        for attr in attrs_to_show:
+        for attr in info["attributes"]:
             label = f"<span style='color:{attr['color']}'>+ {attr['name']} : {attr['type']} {attr['mandatory']}</span>"
             label_lines.append(label)
-
-            
-        if len(info["attributes"]) > max_attrs:
-            label_lines.append(f"<i>... and {len(info['attributes']) - max_attrs} more</i>")
             
         html_label = "<br>".join(label_lines).replace('"', '&quot;')
         lines.append(f'{safe_cls}["{html_label}"]')
