@@ -222,7 +222,6 @@ def get_relation():
                 visited.update(new_relations)
                 all_indirect.update(new_relations)
                 level_relations = new_relations
-
         return jsonify({"direct": sorted(direct_relations), "indirect": sorted(all_indirect - {param})})
     except Exception as e:
         import traceback
