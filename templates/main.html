@@ -382,6 +382,29 @@
       background: var(--success-color);
     }
 
+    .delete-file-btn {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--error-color);
+      border: none;
+      padding: 0.3rem 0.5rem;
+      border-radius: 0.3rem;
+      cursor: pointer;
+      font-size: 0.75rem;
+      transition: all 0.3s ease;
+      margin-left: 0.4rem;
+    }
+
+    .delete-file-btn:hover {
+      background: var(--error-color);
+      color: white;
+    }
+
+    .available-file-actions {
+      display: flex;
+      align-items: center;
+      gap: 0;
+    }
+
     /* File Preview */
     .file-preview {
       display: none;
@@ -763,7 +786,7 @@
   <div class="main-container">
     <div class="generator-card fade-in">
       <div class="card-header">
-        <h2>Generate Your UML Diagram</h2>
+        <h2>NIDD Insights</h2>
         <p>Upload Excel files or select from available files</p>
       </div>
 
@@ -943,11 +966,23 @@
               <div class="available-file-size">${(file.size / 1024).toFixed(1)} KB</div>
             </div>
           </div>
-          <button type="button" class="select-file-btn ${isSelected ? 'selected' : ''}" onclick="selectAvailableFile(${index})">
-            ${isSelected ? 'Selected' : 'Select'}
-          </button>
+          <div class="available-file-actions">
+            <button type="button" class="select-file-btn ${isSelected ? 'selected' : ''}" data-index="${index}">
+              ${isSelected ? 'Selected' : 'Select'}
+            </button>
+            <button type="button" class="delete-file-btn" data-filename="${file.name}" title="Delete file">
+              <i class="fas fa-trash"></i>
+            </button>
+          </div>
         `;
         availableFilesList.appendChild(fileItem);
+        
+        // Attach event listeners
+        const selectBtn = fileItem.querySelector('.select-file-btn');
+        const deleteBtn = fileItem.querySelector('.delete-file-btn');
+        
+        selectBtn.addEventListener('click', () => selectAvailableFile(index));
+        deleteBtn.addEventListener('click', () => deleteFile(file.name));
       });
     }
 
@@ -965,6 +1000,42 @@
       displayAvailableFiles();
       updateSelectedFiles();
       updateGenerateButton();
+    }
+
+    // Delete file
+    function deleteFile(fileName) {
+      if (confirm(`Are you sure you want to delete "${fileName}"?`)) {
+        console.log('Deleting file:', fileName); // Debug log
+        
+        fetch(`/delete-file?name=${encodeURIComponent(fileName)}`, { 
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+          .then(response => {
+            console.log('Response status:', response.status); // Debug log
+            return response.json();
+          })
+          .then(data => {
+            console.log('Response data:', data); // Debug log
+            if (data.success) {
+              showMessage('File deleted successfully', 'success');
+              // Remove from selectedAvailableFiles if it was selected
+              selectedAvailableFiles = selectedAvailableFiles.filter(f => f.name !== fileName);
+              updateSelectedFiles();
+              updateGenerateButton();
+              // Refresh the file list
+              loadAvailableFiles();
+            } else {
+              showMessage(data.error || 'Failed to delete file', 'error');
+            }
+          })
+          .catch(err => {
+            console.error('Delete error:', err); // Debug log
+            showMessage('Error deleting file: ' + err.message, 'error');
+          });
+      }
     }
 
     // Diagram type selection

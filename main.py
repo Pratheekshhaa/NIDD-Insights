@@ -376,6 +376,26 @@ def select_available_files():
             })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+@app.route('/delete-file', methods=['DELETE'])
+def delete_file():
+    try:
+        # You’re sending ?name=filename.xlsx in the query
+        file_name = request.args.get('name')
+        if not file_name:
+            return jsonify({"success": False, "error": "No filename provided"}), 400
+
+        # Secure filename to avoid path traversal
+        safe_name = secure_filename(file_name)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], safe_name)
+
+        if not os.path.exists(file_path):
+            return jsonify({"success": False, "error": "File not found"}), 404
+
+        os.remove(file_path)
+        return jsonify({"success": True})
+    except Exception as e:
+        print(f"Error deleting file: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/upload', methods=['POST'])
 def upload_file():
