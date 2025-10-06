@@ -72,7 +72,8 @@ They are also color coded based on the modifications; furthermore they are addre
 
 <img width="1919" height="945" alt="Image" src="https://github.com/user-attachments/assets/95a4b5f9-f9a7-4cb6-92b3-eff68dc44f99" />
 <br><br>
-<img width="1915" height="943" alt="Image" src="https://github.com/user-attachments/assets/889fcb03-421c-4533-b521-385db9859e2a" />
+<img width="1918" height="941" alt="Screenshot 2025-10-06 155532" src="https://github.com/user-attachments/assets/8ed704ee-0b2c-406b-8713-372377ae349c" />
+
 <br><br>
 ## UML Diagram Page:
 
