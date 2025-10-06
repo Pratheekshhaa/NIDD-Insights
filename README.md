@@ -1,4 +1,4 @@
-# UML Diagram Generator
+# NIDD Insights
 
 An interactive web-based tool for generating Unified Modeling Language (UML) diagrams and Paremeterized Relation diagram: "Easily uploads structured Excel files and generate clean, well-organized UML class diagrams automatically."
 
@@ -55,9 +55,9 @@ Nokia_UML
 
 ```
 ## Methodology:
-we are taking a database and analyzing all the data in that given database.
-further after analyzing we are creating a uml diagram that shows the relationship between the class and parameters. 
-they are also color coded based on the modifications; furthermore they are addressed in a uml diagram that shows the depth of the relation
+we are taking a xl sheet file and analyzing all the data in that file.
+Further after analyzing we are creating a uml diagram that shows the relationship between the class and parameters. 
+They are also color coded based on the modifications; furthermore they are addressed in a uml diagram that shows the depth of the relation
 
 ---
 
@@ -70,22 +70,26 @@ they are also color coded based on the modifications; furthermore they are addre
 
 ## Landing page:
 
-<img width="1919" height="1018" alt="Image" src="https://github.com/user-attachments/assets/f8d3e2d9-19cd-4b96-8f0f-94169439b957" />
+<img width="1919" height="945" alt="Image" src="https://github.com/user-attachments/assets/95a4b5f9-f9a7-4cb6-92b3-eff68dc44f99" />
 <br><br>
-<img width="1916" height="1022" alt="Image" src="https://github.com/user-attachments/assets/7210ce94-868e-47f2-b477-4f3ca4ab5f94" />
+<img width="1915" height="943" alt="Image" src="https://github.com/user-attachments/assets/889fcb03-421c-4533-b521-385db9859e2a" />
 <br><br>
 ## UML Diagram Page:
 
-
-<img width="1915" height="1016" alt="Image" src="https://github.com/user-attachments/assets/4fad065d-d802-4b63-86c2-22d111adaaa0" />
+<img width="1915" height="942" alt="Image" src="https://github.com/user-attachments/assets/9fb19bfe-1fb6-4868-96c8-f4c9d5bf5e82" />
 <br><br>
-<img width="1919" height="1018" alt="Image" src="https://github.com/user-attachments/assets/da91fcdd-6949-4c4a-88b3-96b4ce0bf3e5" />
+<img width="1918" height="941" alt="Image" src="https://github.com/user-attachments/assets/bc76e9bd-23a1-4fb4-bdc2-53df964526b8" />
+<br><br>
+<img width="1919" height="942" alt="Image" src="https://github.com/user-attachments/assets/5c8232d1-b0aa-4ec1-a415-477a7896e7b7" />
 <br><br>
 ## Parametrized Relation Page:
 <br><br>
-<img width="1919" height="1017" alt="Image" src="https://github.com/user-attachments/assets/c041f2bb-e77b-459f-9b8e-88a0bcb88844" />
+<img width="1919" height="945" alt="Image" src="https://github.com/user-attachments/assets/dd859f19-a34a-47f4-b72a-84116689ae2c" />
 <br><br>
-
+<img width="1913" height="944" alt="Image" src="https://github.com/user-attachments/assets/ddf9415f-706a-4922-9c8a-4a0669ec0dfb" />
+<br><br>
+<img width="1919" height="948" alt="Image" src="https://github.com/user-attachments/assets/07305829-1174-4156-934c-6c9323be2308" />
+<br><br>
 
 
 
