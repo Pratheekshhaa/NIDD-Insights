@@ -78,13 +78,12 @@
     }
 
     .logo i {
-    font-size: 1.1rem;
-    background: var(--primary-gradient);
-    background-clip: text;                /* ✅ Standard property */
-    -webkit-background-clip: text;        /* ✅ WebKit-prefixed */
-    -webkit-text-fill-color: transparent;
-  }
-
+      font-size: 1.1rem;
+      background: var(--primary-gradient);
+      background-clip: text;
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+    }
 
     .nav-links {
       display: flex;
@@ -199,73 +198,16 @@
       color: var(--text-secondary);
     }
 
-    /* Upload Section - Side by Side Layout */
+    /* Upload Section - Full Width */
     .upload-section {
       margin-bottom: 1.8rem;
     }
 
     .upload-container {
-      display: grid;
-      grid-template-columns: 1fr 1fr;
-      gap: 1.2rem;
       margin-bottom: 1.2rem;
     }
 
-    .upload-area {
-      border: 2px dashed var(--border-color);
-      border-radius: 0.6rem;
-      padding: 1.5rem 1.2rem;
-      text-align: center;
-      background: var(--secondary-gradient);
-      transition: all 0.3s ease;
-      cursor: pointer;
-      position: relative;
-      overflow: hidden;
-    }
-
-    .upload-area:hover {
-      border-color: var(--accent-color);
-      background: rgba(59, 130, 246, 0.05);
-      transform: translateY(-2px);
-      box-shadow: var(--shadow-md);
-    }
-
-    .upload-area.dragover {
-      border-color: var(--success-color);
-      background: rgba(16, 185, 129, 0.05);
-      transform: scale(1.02);
-    }
-
-    .upload-icon {
-      width: 2.5rem;
-      height: 2.5rem;
-      margin: 0 auto 0.8rem;
-      background: var(--primary-gradient);
-      border-radius: 0.6rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      font-size: 1.1rem;
-    }
-
-    .upload-area input[type="file"] {
-      display: none;
-    }
-
-    .upload-text {
-      font-size: 0.9rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      margin-bottom: 0.4rem;
-    }
-
-    .upload-subtext {
-      color: var(--text-secondary);
-      font-size: 0.7rem;
-    }
-
-    /* Available Files Browser */
+    /* Available Files Browser - Full Width */
     .available-files {
       border: 2px solid var(--border-color);
       border-radius: 0.6rem;
@@ -291,23 +233,43 @@
       gap: 0.4rem;
     }
 
+    .header-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+    }
+
+    .upload-btn,
     .refresh-btn {
       background: none;
       border: none;
       color: var(--accent-color);
       cursor: pointer;
-      padding: 0.2rem;
-      border-radius: 0.2rem;
+      padding: 0.3rem 0.5rem;
+      border-radius: 0.3rem;
       transition: all 0.3s ease;
-      font-size: 0.8rem;
+      font-size: 0.9rem;
+      display: flex;
+      align-items: center;
+      gap: 0.3rem;
     }
 
+    .upload-btn:hover,
     .refresh-btn:hover {
       background: rgba(59, 130, 246, 0.1);
     }
 
+    .upload-btn {
+      font-weight: 500;
+    }
+
+    /* Hidden file input */
+    #excel_files {
+      display: none;
+    }
+
     .available-files-list {
-      max-height: 180px;
+      max-height: 300px;
       overflow-y: auto;
       padding: 0.4rem;
     }
@@ -403,84 +365,6 @@
       display: flex;
       align-items: center;
       gap: 0;
-    }
-
-    /* File Preview */
-    .file-preview {
-      display: none;
-      background: rgba(59, 130, 246, 0.05);
-      border-radius: 0.6rem;
-      padding: 0.8rem;
-      margin-top: 0.8rem;
-      border-left: 3px solid var(--accent-color);
-    }
-
-    .file-item {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding: 0.6rem;
-      background: white;
-      border-radius: 0.4rem;
-      margin-bottom: 0.4rem;
-      box-shadow: var(--shadow-sm);
-      transition: all 0.3s ease;
-    }
-
-    .file-item:hover {
-      transform: translateX(2px);
-      box-shadow: var(--shadow-md);
-    }
-
-    .file-item:last-child {
-      margin-bottom: 0;
-    }
-
-    .file-info {
-      display: flex;
-      align-items: center;
-      gap: 0.6rem;
-    }
-
-    .file-icon {
-      width: 1.8rem;
-      height: 1.8rem;
-      background: var(--secondary-gradient);
-      border-radius: 0.3rem;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      color: var(--accent-color);
-      font-size: 0.8rem;
-    }
-
-    .file-details h4 {
-      font-weight: 500;
-      color: var(--text-primary);
-      margin-bottom: 0.1rem;
-      font-size: 0.75rem;
-    }
-
-    .file-size {
-      color: var(--text-secondary);
-      font-size: 0.65rem;
-    }
-
-    .remove-file {
-      background: rgba(239, 68, 68, 0.1);
-      color: var(--error-color);
-      border: none;
-      padding: 0.3rem 0.6rem;
-      border-radius: 0.3rem;
-      cursor: pointer;
-      font-size: 0.7rem;
-      font-weight: 500;
-      transition: all 0.3s ease;
-    }
-
-    .remove-file:hover {
-      background: var(--error-color);
-      color: white;
     }
 
     /* Form Elements */
@@ -694,17 +578,8 @@
         font-size: 1.3rem;
       }
 
-      .upload-container {
-        grid-template-columns: 1fr;
-        gap: 0.8rem;
-      }
-
       .diagram-options {
         grid-template-columns: 1fr;
-      }
-
-      .upload-area {
-        padding: 1.2rem 0.8rem;
       }
 
       .card-body {
@@ -787,7 +662,7 @@
     <div class="generator-card fade-in">
       <div class="card-header">
         <h2>NIDD Insights</h2>
-        <p>Upload Excel files or select from available files</p>
+        <p>Select files from available files or upload new files</p>
       </div>
 
       <div class="card-body">   
@@ -797,22 +672,7 @@
             <label for="data-source" style="margin-bottom: 0.8rem;">Data Source:</label>
             
             <div class="upload-container">
-              <!-- Upload New Files -->
-              <div>
-                <div class="section-title">
-                  <i class="fas fa-upload"></i>&nbsp; Upload New Files
-                </div>
-                <label class="upload-area" id="upload-area">
-                  <div class="upload-icon">
-                    <i class="fas fa-cloud-upload-alt"></i>
-                  </div>
-                  <div class="upload-text">Drop Excel files here</div>
-                  <div class="upload-subtext">or click to browse • .xlsx, .xls • Max 10MB</div>
-                  <input type="file" id="excel_files" name="excel_files" multiple accept=".xlsx,.xls,.xlsm" />
-                </label>
-              </div>
-
-              <!-- Available Files -->
+              <!-- Available Files - Full Width -->
               <div>
                 <div class="section-title">
                   <i class="fas fa-folder-open"></i>&nbsp; Available Files
@@ -820,9 +680,14 @@
                 <div class="available-files">
                   <div class="available-files-header">
                     <h4><i class="fas fa-server"></i>&nbsp; Uploads Folder</h4>
-                    <button type="button" class="refresh-btn" id="refresh-files" title="Refresh">
-                      <i class="fas fa-sync-alt"></i>
-                    </button>
+                    <div class="header-actions">
+                      <button type="button" class="upload-btn" id="upload-btn" title="Upload new files">
+                        <i class="fas fa-plus"></i> Upload
+                      </button>
+                      <button type="button" class="refresh-btn" id="refresh-files" title="Refresh">
+                        <i class="fas fa-sync-alt"></i>
+                      </button>
+                    </div>
                   </div>
                   <div class="available-files-list" id="available-files-list">
                     <div class="empty-state">
@@ -834,13 +699,8 @@
               </div>
             </div>
 
-            <!-- File Preview -->
-            <div class="file-preview" id="file-preview">
-              <div class="section-title">
-                <i class="fas fa-file-check"></i>&nbsp; Selected Files
-              </div>
-              <div id="file-list"></div>
-            </div>
+            <!-- Hidden file input -->
+            <input type="file" id="excel_files" name="excel_files" multiple accept=".xlsx,.xls,.xlsm" />
           </div>
 
           <!-- Diagram Type Selection -->
@@ -888,10 +748,8 @@
 
   <script>
     const form = document.getElementById("upload-form");
-    const uploadArea = document.getElementById("upload-area");
+    const uploadBtn = document.getElementById("upload-btn");
     const fileInput = document.getElementById("excel_files");
-    const filePreview = document.getElementById("file-preview");
-    const fileList = document.getElementById("file-list");
     const availableFilesList = document.getElementById("available-files-list");
     const refreshBtn = document.getElementById("refresh-files");
     const loading = document.getElementById("loading");
@@ -899,7 +757,6 @@
     const diagramTypeInput = document.getElementById("diagram-type");
     const generateBtn = document.getElementById("generate-btn");
     
-    let selectedFiles = [];
     let availableFiles = [];
     let selectedAvailableFiles = [];
     let selectedDiagramType = '';
@@ -913,6 +770,11 @@
         message.style.display = 'none';
       }, 5000);
     }
+
+    // Upload button click handler
+    uploadBtn.addEventListener('click', () => {
+      fileInput.click();
+    });
 
     // Load available files from uploads folder
     async function loadAvailableFiles() {
@@ -998,41 +860,30 @@
       }
       
       displayAvailableFiles();
-      updateSelectedFiles();
       updateGenerateButton();
     }
 
     // Delete file
     function deleteFile(fileName) {
       if (confirm(`Are you sure you want to delete "${fileName}"?`)) {
-        console.log('Deleting file:', fileName); // Debug log
-        
         fetch(`/delete-file?name=${encodeURIComponent(fileName)}`, { 
           method: 'DELETE',
           headers: {
             'Content-Type': 'application/json'
           }
         })
-          .then(response => {
-            console.log('Response status:', response.status); // Debug log
-            return response.json();
-          })
+          .then(response => response.json())
           .then(data => {
-            console.log('Response data:', data); // Debug log
             if (data.success) {
               showMessage('File deleted successfully', 'success');
-              // Remove from selectedAvailableFiles if it was selected
               selectedAvailableFiles = selectedAvailableFiles.filter(f => f.name !== fileName);
-              updateSelectedFiles();
               updateGenerateButton();
-              // Refresh the file list
               loadAvailableFiles();
             } else {
               showMessage(data.error || 'Failed to delete file', 'error');
             }
           })
           .catch(err => {
-            console.error('Delete error:', err); // Debug log
             showMessage('Error deleting file: ' + err.message, 'error');
           });
       }
@@ -1049,44 +900,60 @@
       });
     });
 
-    // Handle file input change
-    fileInput.addEventListener("change", (event) => {
-      selectedFiles = Array.from(event.target.files);
-      updateSelectedFiles();
-      updateGenerateButton();
-    });
-
-    // Update selected files preview
-    function updateSelectedFiles() {
-      if (selectedFiles.length === 0 && selectedAvailableFiles.length === 0) {
-        filePreview.style.display = "none";
-        return;
-      }
-
-      fileList.innerHTML = "";
-
-      [...selectedFiles, ...selectedAvailableFiles].forEach((file, index) => {
-        const fileItem = document.createElement("div");
-        fileItem.className = "file-item";
-        fileItem.innerHTML = `
-          <div class="file-info">
-            <div class="file-icon"><i class="fas fa-file-excel"></i></div>
-            <div class="file-details">
-              <h4>${file.name || file.filename}</h4>
-              <div class="file-size">${(file.size / 1024).toFixed(1)} KB</div>
-            </div>
-          </div>
-          <button type="button" class="remove-file" onclick="removeFile(${index})">Remove</button>
-        `;
-        fileList.appendChild(fileItem);
+    // Handle file input change - Upload to server
+    fileInput.addEventListener("change", async (event) => {
+      const files = Array.from(event.target.files);
+      
+      // Filter only Excel files
+      const validFiles = files.filter(file => {
+        const fileName = file.name.toLowerCase();
+        return fileName.endsWith('.xlsx') || fileName.endsWith('.xls') || fileName.endsWith('.xlsm');
       });
-
-      filePreview.style.display = "block";
-    }
+      
+      // Show error if invalid files were selected
+      if (files.length > validFiles.length) {
+        const invalidCount = files.length - validFiles.length;
+        showMessage(`${invalidCount} file(s) skipped. Only .xlsx, .xls, and .xlsm files are allowed.`, 'error');
+      }
+      
+      if (validFiles.length > 0) {
+        try {
+          uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+          uploadBtn.disabled = true;
+          
+          // Upload files to server
+          const formData = new FormData();
+          validFiles.forEach(file => formData.append("files", file));
+          
+          const response = await fetch("/upload-to-folder", {
+            method: "POST",
+            body: formData
+          });
+          
+          const result = await response.json();
+          
+          if (result.success) {
+            showMessage(`${validFiles.length} file(s) uploaded successfully`, 'success');
+            // Reload the available files list
+            await loadAvailableFiles();
+          } else {
+            showMessage(result.error || 'Upload failed', 'error');
+          }
+        } catch (error) {
+          showMessage('Upload failed: ' + error.message, 'error');
+        } finally {
+          uploadBtn.innerHTML = '<i class="fas fa-plus"></i> Upload';
+          uploadBtn.disabled = false;
+        }
+      }
+      
+      // Reset the file input so the same file can be selected again
+      fileInput.value = '';
+    });
 
     // Update generate button state
     function updateGenerateButton() {
-      const hasFiles = selectedFiles.length > 0 || selectedAvailableFiles.length > 0;
+      const hasFiles = selectedAvailableFiles.length > 0;
       const hasDiagramType = selectedDiagramType !== '';
       
       if (!hasFiles) {
@@ -1102,46 +969,12 @@
       }
     }
 
-    // Remove selected file
-    function removeFile(index) {
-      if (index < selectedFiles.length) {
-        selectedFiles.splice(index, 1);
-      } else {
-        const adjustedIndex = index - selectedFiles.length;
-        selectedAvailableFiles.splice(adjustedIndex, 1);
-      }
-      updateSelectedFiles();
-      updateGenerateButton();
-      displayAvailableFiles(); // Refresh the available files display
-    }
-
-    // Drag & Drop behavior
-    uploadArea.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      uploadArea.classList.add("dragover");
-    });
-
-    uploadArea.addEventListener("dragleave", () => {
-      uploadArea.classList.remove("dragover");
-    });
-
-    uploadArea.addEventListener("drop", (e) => {
-      e.preventDefault();
-      uploadArea.classList.remove("dragover");
-      const files = Array.from(e.dataTransfer.files).filter(f =>
-        f.name.endsWith(".xlsx") || f.name.endsWith(".xls") || f.name.endsWith(".xlsm")
-      );
-      selectedFiles = selectedFiles.concat(files);
-      updateSelectedFiles();
-      updateGenerateButton();
-    });
-
-    // Handle form submit - UPDATED to handle both new uploads and available files
+    // Handle form submit
     form.addEventListener("submit", async (e) => {
       e.preventDefault();
 
-      if (selectedFiles.length === 0 && selectedAvailableFiles.length === 0) {
-        showMessage("Please select or upload at least one file", "error");
+      if (selectedAvailableFiles.length === 0) {
+        showMessage("Please select at least one file", "error");
         return;
       }
 
@@ -1154,64 +987,26 @@
         loading.style.display = "block";
         generateBtn.disabled = true;
 
-        // If only available files are selected, use the new endpoint
-        if (selectedFiles.length === 0 && selectedAvailableFiles.length > 0) {
-          const response = await fetch("/select-available-files", {
-            method: "POST",
-            headers: {
-              'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-              filenames: selectedAvailableFiles.map(f => f.name),
-              diagram_type: selectedDiagramType
-            })
-          });
+        const response = await fetch("/select-available-files", {
+          method: "POST",
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            filenames: selectedAvailableFiles.map(f => f.name),
+            diagram_type: selectedDiagramType
+          })
+        });
 
-          const result = await response.json();
-          
-          if (result.success) {
-            showMessage(result.message, "success");
-            setTimeout(() => {
-              window.location.href = result.redirect;
-            }, 1000);
-          } else {
-            showMessage(result.error || "Failed to process files", "error");
-          }
+        const result = await response.json();
+        
+        if (result.success) {
+          showMessage(result.message, "success");
+          setTimeout(() => {
+            window.location.href = result.redirect;
+          }, 1000);
         } else {
-          // Handle new file uploads (existing logic)
-          const formData = new FormData();
-          selectedFiles.forEach(file => formData.append("excel_files", file));
-          
-          // Also include selected available files
-          selectedAvailableFiles.forEach(file => {
-            formData.append("available_files", file.name);
-          });
-          
-          formData.append("diagram_type", selectedDiagramType);
-
-          const response = await fetch("/upload-main", {
-            method: "POST",
-            body: formData
-          });
-
-          if (response.ok) {
-            const result = await response.json();
-            if (result.success) {
-              showMessage("Files processed successfully!", "success");
-              setTimeout(() => {
-                if (selectedDiagramType === 'uml') {
-                  window.location.href = '/umldiagram.html';
-                } else {
-                  window.location.href = '/parameter.html';
-                }
-              }, 1000);
-            } else {
-              showMessage(result.error || "Upload failed", "error");
-            }
-          } else {
-            const errorText = await response.text();
-            showMessage(errorText || "Upload failed", "error");
-          }
+          showMessage(result.error || "Failed to process files", "error");
         }
       } catch (error) {
         console.error(error);

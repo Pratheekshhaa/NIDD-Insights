@@ -376,10 +376,42 @@ def select_available_files():
             })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route('/upload-to-folder', methods=['POST'])
+def upload_to_folder():
+    """Handle file uploads to the uploads folder from the plus button"""
+    try:
+        uploaded_files = request.files.getlist("files")
+        
+        if not uploaded_files:
+            return jsonify({"success": False, "error": "No files uploaded"}), 400
+        
+        upload_folder = app.config['UPLOAD_FOLDER']
+        os.makedirs(upload_folder, exist_ok=True)
+        
+        uploaded_count = 0
+        for file in uploaded_files:
+            if file and file.filename.endswith(('.xlsx', '.xls', '.xlsm')):
+                filename = secure_filename(file.filename)
+                file_path = os.path.join(upload_folder, filename)
+                file.save(file_path)
+                uploaded_count += 1
+        
+        if uploaded_count == 0:
+            return jsonify({"success": False, "error": "No valid Excel files found"}), 400
+        
+        return jsonify({
+            "success": True,
+            "message": f"{uploaded_count} file(s) uploaded successfully"
+        })
+    except Exception as e:
+        print(f"Error uploading files: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
 @app.route('/delete-file', methods=['DELETE'])
 def delete_file():
     try:
-        # You’re sending ?name=filename.xlsx in the query
+        # You're sending ?name=filename.xlsx in the query
         file_name = request.args.get('name')
         if not file_name:
             return jsonify({"success": False, "error": "No filename provided"}), 400
@@ -492,8 +524,6 @@ def generate_all_classes_uml():
     # Add all classes with their attributes
     for cls, info in uml_data.items():
         safe_cls = cls.replace("/", "_").replace("-", "_").replace(".", "_")
-        label_lines = [f"<b>{cls}</b>"]      
-       
         label_lines = [f"<b>{cls}</b>", "<hr>"]
 
         for attr in info["attributes"]:
