@@ -478,6 +478,8 @@ def generate_uml():
     visited = set()
     result_classes = {}
     queue = deque()
+    
+    # KEY FIX: Only start from the selected class (leaf), don't include parent hierarchy
     queue.append((selected_class, 0))
 
     while queue:
@@ -496,7 +498,11 @@ def generate_uml():
 
     for cls, info in result_classes.items():
         safe_cls = cls.replace("/", "_").replace("-", "_").replace(".", "_")
-        label_lines = [f"<b>{cls}</b>", "<hr>"]
+        
+        # KEY FIX: Extract only the leaf class name for display
+        display_name = cls.split("/")[-1] if "/" in cls else cls
+        
+        label_lines = [f"<b>{display_name}</b>", "<hr>"]
 
         for attr in info["attributes"]:
             label = f"<span style='color:{attr['color']}'>+ {attr['name']} : {attr['type']} {attr['mandatory']}</span>"
@@ -515,7 +521,7 @@ def generate_uml():
     return jsonify({"uml": "\n".join(lines)})
 
 def generate_all_classes_uml():
-    """Generate UML diagram for all classes"""
+    """Generate UML diagram for all classes - showing only leaf names"""
     if not uml_data:
         return jsonify({"uml": "graph TD\n%% No classes available"})
 
@@ -524,7 +530,11 @@ def generate_all_classes_uml():
     # Add all classes with their attributes
     for cls, info in uml_data.items():
         safe_cls = cls.replace("/", "_").replace("-", "_").replace(".", "_")
-        label_lines = [f"<b>{cls}</b>", "<hr>"]
+        
+        # KEY FIX: Extract only the leaf class name for display
+        display_name = cls.split("/")[-1] if "/" in cls else cls
+        
+        label_lines = [f"<b>{display_name}</b>", "<hr>"]
 
         for attr in info["attributes"]:
             label = f"<span style='color:{attr['color']}'>+ {attr['name']} : {attr['type']} {attr['mandatory']}</span>"
@@ -542,6 +552,7 @@ def generate_all_classes_uml():
                 lines.append(f"{from_cls} --> {to_cls}")
 
     return jsonify({"uml": "\n".join(lines)})
+
 
 @app.route('/clear-session', methods=['POST'])
 def clear_session():
