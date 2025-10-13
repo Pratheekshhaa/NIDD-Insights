@@ -18,7 +18,8 @@ parameters_list = []
 parameter_relations = {}
 uml_data = defaultdict(lambda: {
     "attributes": [],
-    "relationships": set()
+    "relationships": set(),
+    "multiplicities": {}
 })
 
 # --------- Parameter Relation Finder (NEW LOGIC) ---------
@@ -75,7 +76,7 @@ def load_excel_data(file_paths):
     except Exception as e:
         print(f"Failed to load Excel: {e}")
 
-# --------- UML Diagram Generator (UNCHANGED FROM OLD CODE) ---------
+# --------- UML Diagram Generator (UPDATED WITH MULTIPLICITY) ---------
 def load_uml_data(file_paths):
     """Load UML data from multiple Excel files"""
     global uml_data
@@ -91,16 +92,18 @@ def load_uml_data(file_paths):
             
             for sheet in df:
                 data = df[sheet]
-                if data.shape[1] < 30:
+                if data.shape[1] < 31:
                     continue
                     
                 data = data.rename(columns={
                     data.columns[1]: "MOC_Name",
-                    data.columns[2]: "Parameter_Name",  # KEPT AS COLUMN 2
+                    data.columns[2]: "Parameter_Name",
                     data.columns[4]: "Data_Type",
                     data.columns[5]: "Parent_Parameter",
                     data.columns[25]: "Required_On_Creation",
-                    data.columns[28]: "Modification"
+                    data.columns[28]: "Modification",
+                    data.columns[29]: "MinOccurs",
+                    data.columns[30]: "MaxOccurs"
                 })
                 
                 data = data.dropna(subset=["MOC_Name", "Parameter_Name"], how='all')
@@ -112,6 +115,8 @@ def load_uml_data(file_paths):
                     mod_status = str(row["Modification"]).strip().lower()
                     required = str(row["Required_On_Creation"]).strip().lower()
                     parent = str(row["Parent_Parameter"]).strip() if pd.notna(row["Parent_Parameter"]) else None
+                    min_occurs = str(row["MinOccurs"]).strip() if pd.notna(row["MinOccurs"]) else ""
+                    max_occurs = str(row["MaxOccurs"]).strip() if pd.notna(row["MaxOccurs"]) else ""
                     
                     # Skip invalid entries
                     if (param_name.lower() == "parameter name" or 
@@ -146,6 +151,19 @@ def load_uml_data(file_paths):
                             parent_class = "/".join(parts[:i])
                             child_class = "/".join(parts[:i+1])
                             uml_data[parent_class]["relationships"].add(child_class)
+                            
+                            # Store multiplicity for this relationship
+                            multiplicity = ""
+                            if min_occurs and min_occurs.lower() != 'nan' and max_occurs and max_occurs.lower() != 'nan':
+                                multiplicity = f"{min_occurs}..{max_occurs}"
+                            elif min_occurs and min_occurs.lower() != 'nan':
+                                multiplicity = f"{min_occurs}..*"
+                            elif max_occurs and max_occurs.lower() != 'nan':
+                                multiplicity = f"0..{max_occurs}"
+                            
+                            if multiplicity:
+                                if child_class not in uml_data[parent_class]["multiplicities"]:
+                                    uml_data[parent_class]["multiplicities"][child_class] = multiplicity
                             
                     all_classes.add(class_name)
         
@@ -254,7 +272,7 @@ def test_data():
         "uploaded_files": file_paths
     })
 
-# --------- UML Diagram Generator (UNCHANGED) ---------
+# --------- UML Diagram Generator (UPDATED WITH MULTIPLICITY) ---------
 @app.route('/umldiagram.html')
 def uml_ui():
     if 'uploaded_files' not in session or not session['uploaded_files']:
@@ -516,7 +534,12 @@ def generate_uml():
         for rel in info["relationships"]:
             if rel in result_classes:
                 to_cls = rel.replace("/", "_").replace("-", "_").replace(".", "_")
-                lines.append(f"{from_cls} --> {to_cls}")
+                # Add multiplicity if available
+                multiplicity = info["multiplicities"].get(rel, "")
+                if multiplicity:
+                    lines.append(f'{from_cls} -->|"{multiplicity}"| {to_cls}')
+                else:
+                    lines.append(f"{from_cls} --> {to_cls}")
 
     return jsonify({"uml": "\n".join(lines)})
 
@@ -543,13 +566,18 @@ def generate_all_classes_uml():
         html_label = "<br>".join(label_lines).replace('"', '&quot;')
         lines.append(f'{safe_cls}["{html_label}"]')
 
-    # Add all relationships
+    # Add all relationships with multiplicity
     for cls, info in uml_data.items():
         from_cls = cls.replace("/", "_").replace("-", "_").replace(".", "_")
         for rel in info["relationships"]:
             if rel in uml_data:  # Only add relationship if target class exists
                 to_cls = rel.replace("/", "_").replace("-", "_").replace(".", "_")
-                lines.append(f"{from_cls} --> {to_cls}")
+                # Add multiplicity if available
+                multiplicity = info["multiplicities"].get(rel, "")
+                if multiplicity:
+                    lines.append(f'{from_cls} -->|"{multiplicity}"| {to_cls}')
+                else:
+                    lines.append(f"{from_cls} --> {to_cls}")
 
     return jsonify({"uml": "\n".join(lines)})
 
