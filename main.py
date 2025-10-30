@@ -98,9 +98,11 @@ def load_uml_data(file_paths):
                 data = data.rename(columns={
                     data.columns[1]: "MOC_Name",
                     data.columns[2]: "Parameter_Name",
+                    data.columns[3]: "Abbreviation",
                     data.columns[4]: "Data_Type",
                     data.columns[5]: "Parent_Parameter",
                     data.columns[25]: "Required_On_Creation",
+                    data.columns[27]: "Required_On_Creation_Col_AB",
                     data.columns[28]: "Modification",
                     data.columns[29]: "MinOccurs",
                     data.columns[30]: "MaxOccurs"
@@ -111,9 +113,12 @@ def load_uml_data(file_paths):
                 for _, row in data.iterrows():
                     class_name = str(row["MOC_Name"]).strip()
                     param_name = str(row["Parameter_Name"]).strip()
+                    abbreviation = str(row["Abbreviation"]).strip() if pd.notna(row["Abbreviation"]) else param_name
                     data_type = str(row["Data_Type"]).strip()
                     mod_status = str(row["Modification"]).strip().lower()
                     required = str(row["Required_On_Creation"]).strip().lower()
+                    # Use column AB (index 27) for required status
+                    required_col_ab = str(row["Required_On_Creation_Col_AB"]).strip().lower() if pd.notna(row["Required_On_Creation_Col_AB"]) else required
                     parent = str(row["Parent_Parameter"]).strip() if pd.notna(row["Parent_Parameter"]) else None
                     min_occurs = str(row["MinOccurs"]).strip() if pd.notna(row["MinOccurs"]) else ""
                     max_occurs = str(row["MaxOccurs"]).strip() if pd.notna(row["MaxOccurs"]) else ""
@@ -134,11 +139,19 @@ def load_uml_data(file_paths):
                         color = "gray"
                     else:
                         color = "gray"
-                        
-                    mand = "(M)" if "mandatory" in required else "(O)" if "optional" in required else ""
+                    
+                    # Use column AB for mandatory/optional/system set
+                    if "mandatory" in required_col_ab:
+                        mand = "(M)"
+                    elif "optional" in required_col_ab:
+                        mand = "(O)"
+                    elif "system" in required_col_ab or "value set by" in required_col_ab:
+                        mand = "(S)"
+                    else:
+                        mand = ""
                     
                     uml_data[class_name]["attributes"].append({
-                        "name": param_name,
+                        "name": abbreviation,  # Use abbreviation instead of parameter name
                         "type": data_type,
                         "mandatory": mand,
                         "color": color,

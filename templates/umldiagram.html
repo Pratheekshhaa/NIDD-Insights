@@ -463,6 +463,33 @@
       border-bottom: 3px solid rgba(255, 255, 255, 0.25) !important;
     }
 
+    /* Left-align attribute content (excluding the header) */
+    #uml-diagram .mermaid .nodeLabel span[style*="text-align:left"] {
+      text-align: left !important;
+      display: block !important;
+      padding-left: 8px !important;
+    }
+
+    /* Force left alignment for all attribute spans */
+    #uml-diagram .mermaid .nodeLabel span {
+      text-align: left !important;
+    }
+
+    /* Keep header centered */
+    #uml-diagram .mermaid .nodeLabel b,
+    #uml-diagram .mermaid .nodeLabel > span:first-child {
+      text-align: center !important;
+    }
+
+    /* Ensure all text inside node labels align left except headers */
+    #uml-diagram .mermaid .nodeLabel {
+      text-align: left !important;
+    }
+
+    #uml-diagram .mermaid .nodeLabel > * {
+      text-align: left !important;
+    }
+
     /* Legend Styles */
     .legend-container {
       position: absolute;
@@ -826,6 +853,7 @@
   <!-- JavaScript Logic -->
   <script>
 let classList = [];
+let fullClassList = []; // Store full class paths
 let isInitialized = false;
 
 // DOM Elements
@@ -872,10 +900,14 @@ function showLoading(show = true) {
 }
 
 function updateButtonStates() {
-  const hasValidClass = parameterInput.value && classList.includes(parameterInput.value);
+  const hasValidClass = parameterInput.value && fullClassList.some(fc => getLeafName(fc) === parameterInput.value || fc === parameterInput.value);
   const hasDiagram = document.querySelector('#uml-diagram .mermaid');
-  generateUmlBtn.disabled = !parameterInput.value; // always clickable if user typed something
+  generateUmlBtn.disabled = !parameterInput.value;
   downloadImageBtn.disabled = !hasDiagram;
+}
+
+function getLeafName(fullPath) {
+  return fullPath.includes('/') ? fullPath.split('/').pop() : fullPath;
 }
 
 function renderMermaid(uml) {
@@ -893,7 +925,7 @@ function renderMermaid(uml) {
 
 // Load classes from uploaded files
 async function loadClasses() {
-  if (isInitialized && classList.length > 0) return; // skip if already loaded
+  if (isInitialized && classList.length > 0) return;
 
   try {
     showLoading(true);
@@ -907,7 +939,10 @@ async function loadClasses() {
 
     const result = await response.json();
     if (result.success) {
-      classList = result.classes || [];
+      fullClassList = result.classes || [];
+      // Extract leaf names for display in dropdown
+      classList = fullClassList.map(fc => getLeafName(fc));
+      
       if (classList.length > 0) {
         new Awesomplete(parameterInput, { list: classList, minChars: 1, autoFirst: true, maxItems: 10 });
         showStatus(`Successfully loaded ${classList.length} classes!`, 'success');
@@ -926,10 +961,10 @@ async function loadClasses() {
 
 // Generate UML diagram
 async function generateUML() {
-  const selectedClass = parameterInput.value.trim();
+  const selectedLeafName = parameterInput.value.trim();
   const depth = parseInt(depthInput.value) || 1;
 
-  if (!selectedClass) return showStatus('Please enter a class name.', 'error');
+  if (!selectedLeafName) return showStatus('Please enter a class name.', 'error');
 
   try {
     showLoading(true);
@@ -938,9 +973,15 @@ async function generateUML() {
     // Load classes if not loaded
     await loadClasses();
 
-    if (!classList.includes(selectedClass)) {
-      showStatus('Select a valid class from the suggestions.', 'error');
-      return;
+    // Find the full class path from the leaf name
+    let selectedClass = selectedLeafName;
+    if (selectedLeafName !== "All Classes") {
+      const matchingIndex = classList.indexOf(selectedLeafName);
+      if (matchingIndex === -1) {
+        showStatus('Select a valid class from the suggestions.', 'error');
+        return;
+      }
+      selectedClass = fullClassList[matchingIndex];
     }
 
     // Fetch UML diagram
