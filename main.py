@@ -426,25 +426,27 @@ def upload_to_folder():
         print(f"Error uploading files: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/delete-file', methods=['DELETE'])
-def delete_file():
+@app.route('/delete-all-files', methods=['DELETE'])
+def delete_all_files():
+    """Delete all files from the uploads folder"""
     try:
-        # You're sending ?name=filename.xlsx in the query
-        file_name = request.args.get('name')
-        if not file_name:
-            return jsonify({"success": False, "error": "No filename provided"}), 400
+        upload_folder = app.config['UPLOAD_FOLDER']
+        if not os.path.exists(upload_folder):
+            return jsonify({"success": False, "error": "Upload folder not found"}), 404
 
-        # Secure filename to avoid path traversal
-        safe_name = secure_filename(file_name)
-        file_path = os.path.join(app.config['UPLOAD_FOLDER'], safe_name)
+        deleted_count = 0
+        for filename in os.listdir(upload_folder):
+            file_path = os.path.join(upload_folder, filename)
+            if os.path.isfile(file_path) and filename.lower().endswith(('.xls', '.xlsx', '.xlsm')):
+                os.remove(file_path)
+                deleted_count += 1
 
-        if not os.path.exists(file_path):
-            return jsonify({"success": False, "error": "File not found"}), 404
-
-        os.remove(file_path)
-        return jsonify({"success": True})
+        return jsonify({
+            "success": True,
+            "message": f"{deleted_count} file(s) deleted successfully"
+        })
     except Exception as e:
-        print(f"Error deleting file: {e}")
+        print(f"Error deleting all files: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/upload', methods=['POST'])

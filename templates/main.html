@@ -240,27 +240,36 @@
     }
 
     .upload-btn,
-    .refresh-btn {
-      background: none;
+    .delete-all-btn {
       border: none;
-      color: var(--accent-color);
       cursor: pointer;
-      padding: 0.3rem 0.5rem;
+      padding: 0.3rem 0.6rem;
       border-radius: 0.3rem;
       transition: all 0.3s ease;
-      font-size: 0.9rem;
+      font-size: 0.75rem;
       display: flex;
       align-items: center;
       gap: 0.3rem;
-    }
-
-    .upload-btn:hover,
-    .refresh-btn:hover {
-      background: rgba(59, 130, 246, 0.1);
+      font-weight: 500;
     }
 
     .upload-btn {
-      font-weight: 500;
+      background: var(--accent-color);
+      color: white;
+    }
+
+    .upload-btn:hover {
+      background: #2563eb;
+    }
+
+    .delete-all-btn {
+      background: rgba(239, 68, 68, 0.1);
+      color: var(--error-color);
+    }
+
+    .delete-all-btn:hover {
+      background: var(--error-color);
+      color: white;
     }
 
     /* Hidden file input */
@@ -280,18 +289,9 @@
       justify-content: space-between;
       padding: 0.6rem;
       border-radius: 0.4rem;
-      cursor: pointer;
-      transition: all 0.3s ease;
       margin-bottom: 0.2rem;
-    }
-
-    .available-file-item:hover {
       background: rgba(59, 130, 246, 0.05);
-    }
-
-    .available-file-item.selected {
-      background: rgba(59, 130, 246, 0.1);
-      border: 1px solid var(--accent-color);
+      border: 1px solid rgba(59, 130, 246, 0.2);
     }
 
     .available-file-info {
@@ -324,47 +324,13 @@
       font-size: 0.65rem;
     }
 
-    .select-file-btn {
-      background: var(--accent-color);
-      color: white;
-      border: none;
-      padding: 0.3rem 0.6rem;
-      border-radius: 0.3rem;
-      cursor: pointer;
-      font-size: 0.7rem;
-      font-weight: 500;
-      transition: all 0.3s ease;
-    }
-
-    .select-file-btn:hover {
-      background: #2563eb;
-    }
-
-    .select-file-btn.selected {
+    .selected-badge {
       background: var(--success-color);
-    }
-
-    .delete-file-btn {
-      background: rgba(239, 68, 68, 0.1);
-      color: var(--error-color);
-      border: none;
-      padding: 0.3rem 0.5rem;
-      border-radius: 0.3rem;
-      cursor: pointer;
-      font-size: 0.75rem;
-      transition: all 0.3s ease;
-      margin-left: 0.4rem;
-    }
-
-    .delete-file-btn:hover {
-      background: var(--error-color);
       color: white;
-    }
-
-    .available-file-actions {
-      display: flex;
-      align-items: center;
-      gap: 0;
+      padding: 0.2rem 0.5rem;
+      border-radius: 0.3rem;
+      font-size: 0.65rem;
+      font-weight: 600;
     }
 
     /* Form Elements */
@@ -684,8 +650,8 @@
                       <button type="button" class="upload-btn" id="upload-btn" title="Upload new files">
                         <i class="fas fa-plus"></i> Upload
                       </button>
-                      <button type="button" class="refresh-btn" id="refresh-files" title="Refresh">
-                        <i class="fas fa-sync-alt"></i>
+                      <button type="button" class="delete-all-btn" id="delete-all-btn" title="Delete all files">
+                        <i class="fas fa-trash"></i> Delete All
                       </button>
                     </div>
                   </div>
@@ -724,7 +690,7 @@
           <!-- Submit Button -->
           <div class="btn-container">
             <button type="submit" class="generate-btn" id="generate-btn">
-              <i class="fas fa-upload"></i>&nbsp; Select Files First
+              <i class="fas fa-chart-bar"></i>&nbsp; Select Diagram Type
             </button>
           </div>
 
@@ -749,9 +715,9 @@
   <script>
     const form = document.getElementById("upload-form");
     const uploadBtn = document.getElementById("upload-btn");
+    const deleteAllBtn = document.getElementById("delete-all-btn");
     const fileInput = document.getElementById("excel_files");
     const availableFilesList = document.getElementById("available-files-list");
-    const refreshBtn = document.getElementById("refresh-files");
     const loading = document.getElementById("loading");
     const message = document.getElementById("message");
     const diagramTypeInput = document.getElementById("diagram-type");
@@ -776,28 +742,67 @@
       fileInput.click();
     });
 
+    // Delete all files handler
+    deleteAllBtn.addEventListener('click', () => {
+      if (availableFiles.length === 0) {
+        showMessage('No files to delete', 'error');
+        return;
+      }
+
+      if (confirm(`Are you sure you want to delete all ${availableFiles.length} file(s)?`)) {
+        deleteAllBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+        deleteAllBtn.disabled = true;
+
+        fetch('/delete-all-files', { 
+          method: 'DELETE',
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+          .then(response => response.json())
+          .then(data => {
+            if (data.success) {
+              showMessage('All files deleted successfully', 'success');
+              selectedAvailableFiles = [];
+              updateGenerateButton();
+              loadAvailableFiles();
+            } else {
+              showMessage(data.error || 'Failed to delete files', 'error');
+            }
+          })
+          .catch(err => {
+            showMessage('Error deleting files: ' + err.message, 'error');
+          })
+          .finally(() => {
+            deleteAllBtn.innerHTML = '<i class="fas fa-trash"></i> Delete All';
+            deleteAllBtn.disabled = false;
+          });
+      }
+    });
+
     // Load available files from uploads folder
     async function loadAvailableFiles() {
       try {
-        refreshBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
-        
         const response = await fetch('/get-available-files');
         const data = await response.json();
         
         if (data.success) {
           availableFiles = data.files || [];
+          // Automatically select all files by default
+          selectedAvailableFiles = [...availableFiles];
         } else {
           availableFiles = [];
+          selectedAvailableFiles = [];
           console.error('Failed to load files:', data.error);
         }
         
         displayAvailableFiles();
+        updateGenerateButton();
       } catch (error) {
         console.error('Failed to load available files:', error);
         availableFiles = [];
+        selectedAvailableFiles = [];
         displayAvailableFiles();
-      } finally {
-        refreshBtn.innerHTML = '<i class="fas fa-sync-alt"></i>';
       }
     }
 
@@ -815,9 +820,8 @@
 
       availableFilesList.innerHTML = '';
       availableFiles.forEach((file, index) => {
-        const isSelected = selectedAvailableFiles.find(f => f.name === file.name);
         const fileItem = document.createElement('div');
-        fileItem.className = `available-file-item ${isSelected ? 'selected' : ''}`;
+        fileItem.className = 'available-file-item';
         fileItem.innerHTML = `
           <div class="available-file-info">
             <div class="available-file-icon">
@@ -828,65 +832,12 @@
               <div class="available-file-size">${(file.size / 1024).toFixed(1)} KB</div>
             </div>
           </div>
-          <div class="available-file-actions">
-            <button type="button" class="select-file-btn ${isSelected ? 'selected' : ''}" data-index="${index}">
-              ${isSelected ? 'Selected' : 'Select'}
-            </button>
-            <button type="button" class="delete-file-btn" data-filename="${file.name}" title="Delete file">
-              <i class="fas fa-trash"></i>
-            </button>
+          <div class="selected-badge">
+            <i class="fas fa-check"></i> Selected
           </div>
         `;
         availableFilesList.appendChild(fileItem);
-        
-        // Attach event listeners
-        const selectBtn = fileItem.querySelector('.select-file-btn');
-        const deleteBtn = fileItem.querySelector('.delete-file-btn');
-        
-        selectBtn.addEventListener('click', () => selectAvailableFile(index));
-        deleteBtn.addEventListener('click', () => deleteFile(file.name));
       });
-    }
-
-    // Select available file
-    function selectAvailableFile(index) {
-      const file = availableFiles[index];
-      const existingIndex = selectedAvailableFiles.findIndex(f => f.name === file.name);
-      
-      if (existingIndex === -1) {
-        selectedAvailableFiles.push(file);
-      } else {
-        selectedAvailableFiles.splice(existingIndex, 1);
-      }
-      
-      displayAvailableFiles();
-      updateGenerateButton();
-    }
-
-    // Delete file
-    function deleteFile(fileName) {
-      if (confirm(`Are you sure you want to delete "${fileName}"?`)) {
-        fetch(`/delete-file?name=${encodeURIComponent(fileName)}`, { 
-          method: 'DELETE',
-          headers: {
-            'Content-Type': 'application/json'
-          }
-        })
-          .then(response => response.json())
-          .then(data => {
-            if (data.success) {
-              showMessage('File deleted successfully', 'success');
-              selectedAvailableFiles = selectedAvailableFiles.filter(f => f.name !== fileName);
-              updateGenerateButton();
-              loadAvailableFiles();
-            } else {
-              showMessage(data.error || 'Failed to delete file', 'error');
-            }
-          })
-          .catch(err => {
-            showMessage('Error deleting file: ' + err.message, 'error');
-          });
-      }
     }
 
     // Diagram type selection
@@ -934,7 +885,7 @@
           
           if (result.success) {
             showMessage(`${validFiles.length} file(s) uploaded successfully`, 'success');
-            // Reload the available files list
+            // Reload the available files list (will auto-select all)
             await loadAvailableFiles();
           } else {
             showMessage(result.error || 'Upload failed', 'error');
@@ -958,7 +909,7 @@
       
       if (!hasFiles) {
         generateBtn.disabled = true;
-        generateBtn.innerHTML = `<i class="fas fa-upload"></i>&nbsp; Select Files First`;
+        generateBtn.innerHTML = `<i class="fas fa-upload"></i>&nbsp; Upload Files First`;
       } else if (!hasDiagramType) {
         generateBtn.disabled = true;
         generateBtn.innerHTML = `<i class="fas fa-chart-bar"></i>&nbsp; Select Diagram Type`;
@@ -974,7 +925,7 @@
       e.preventDefault();
 
       if (selectedAvailableFiles.length === 0) {
-        showMessage("Please select at least one file", "error");
+        showMessage("Please upload at least one file", "error");
         return;
       }
 
@@ -1019,7 +970,6 @@
 
     // Initial setup
     loadAvailableFiles();
-    refreshBtn.addEventListener("click", loadAvailableFiles);
     updateGenerateButton();
   </script>
 </body>
