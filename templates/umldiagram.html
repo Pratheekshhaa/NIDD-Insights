@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <title>UML Class Diagram Generator - NIDD</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
   <!-- Fonts -->
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
   
@@ -18,8 +18,8 @@
   <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/awesomplete/awesomplete.css" />
   <script src="https://cdn.jsdelivr.net/npm/awesomplete/awesomplete.min.js"></script>
 
-  <!-- html2canvas for PNG downloads -->
-  <script src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <!--  for PNG downloads -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
 
   <style>
     * {
@@ -463,33 +463,6 @@
       border-bottom: 3px solid rgba(255, 255, 255, 0.25) !important;
     }
 
-    /* Left-align attribute content (excluding the header) */
-    #uml-diagram .mermaid .nodeLabel span[style*="text-align:left"] {
-      text-align: left !important;
-      display: block !important;
-      padding-left: 8px !important;
-    }
-
-    /* Force left alignment for all attribute spans */
-    #uml-diagram .mermaid .nodeLabel span {
-      text-align: left !important;
-    }
-
-    /* Keep header centered */
-    #uml-diagram .mermaid .nodeLabel b,
-    #uml-diagram .mermaid .nodeLabel > span:first-child {
-      text-align: center !important;
-    }
-
-    /* Ensure all text inside node labels align left except headers */
-    #uml-diagram .mermaid .nodeLabel {
-      text-align: left !important;
-    }
-
-    #uml-diagram .mermaid .nodeLabel > * {
-      text-align: left !important;
-    }
-
     /* Legend Styles */
     .legend-container {
       position: absolute;
@@ -743,6 +716,16 @@
       </div>
 
       <div class="panel-body">
+        <!-- File Status Section -->
+        <div class="section">
+          <div class="section-title">
+            <i class="fas fa-info-circle"></i>
+            File Status
+          </div>
+          <div class="status-message status-info" id="initial-status" style="display: block;">
+            Loading your uploaded files...
+          </div>
+        </div>
 
         <!-- Class Selection -->
         <div class="section">
@@ -853,7 +836,6 @@
   <!-- JavaScript Logic -->
   <script>
 let classList = [];
-let fullClassList = []; // Store full class paths
 let isInitialized = false;
 
 // DOM Elements
@@ -900,14 +882,10 @@ function showLoading(show = true) {
 }
 
 function updateButtonStates() {
-  const hasValidClass = parameterInput.value && fullClassList.some(fc => getLeafName(fc) === parameterInput.value || fc === parameterInput.value);
+  const hasValidClass = parameterInput.value && classList.includes(parameterInput.value);
   const hasDiagram = document.querySelector('#uml-diagram .mermaid');
-  generateUmlBtn.disabled = !parameterInput.value;
+  generateUmlBtn.disabled = !parameterInput.value; // always clickable if user typed something
   downloadImageBtn.disabled = !hasDiagram;
-}
-
-function getLeafName(fullPath) {
-  return fullPath.includes('/') ? fullPath.split('/').pop() : fullPath;
 }
 
 function renderMermaid(uml) {
@@ -925,7 +903,7 @@ function renderMermaid(uml) {
 
 // Load classes from uploaded files
 async function loadClasses() {
-  if (isInitialized && classList.length > 0) return;
+  if (isInitialized && classList.length > 0) return; // skip if already loaded
 
   try {
     showLoading(true);
@@ -939,10 +917,7 @@ async function loadClasses() {
 
     const result = await response.json();
     if (result.success) {
-      fullClassList = result.classes || [];
-      // Extract leaf names for display in dropdown
-      classList = fullClassList.map(fc => getLeafName(fc));
-      
+      classList = result.classes || [];
       if (classList.length > 0) {
         new Awesomplete(parameterInput, { list: classList, minChars: 1, autoFirst: true, maxItems: 10 });
         showStatus(`Successfully loaded ${classList.length} classes!`, 'success');
@@ -961,10 +936,10 @@ async function loadClasses() {
 
 // Generate UML diagram
 async function generateUML() {
-  const selectedLeafName = parameterInput.value.trim();
+  const selectedClass = parameterInput.value.trim();
   const depth = parseInt(depthInput.value) || 1;
 
-  if (!selectedLeafName) return showStatus('Please enter a class name.', 'error');
+  if (!selectedClass) return showStatus('Please enter a class name.', 'error');
 
   try {
     showLoading(true);
@@ -973,15 +948,9 @@ async function generateUML() {
     // Load classes if not loaded
     await loadClasses();
 
-    // Find the full class path from the leaf name
-    let selectedClass = selectedLeafName;
-    if (selectedLeafName !== "All Classes") {
-      const matchingIndex = classList.indexOf(selectedLeafName);
-      if (matchingIndex === -1) {
-        showStatus('Select a valid class from the suggestions.', 'error');
-        return;
-      }
-      selectedClass = fullClassList[matchingIndex];
+    if (!classList.includes(selectedClass)) {
+      showStatus('Select a valid class from the suggestions.', 'error');
+      return;
     }
 
     // Fetch UML diagram
@@ -1004,27 +973,87 @@ async function generateUML() {
 }
 
 // Download diagram as PNG
+
 async function downloadDiagram() {
-  const diagram = document.querySelector('#uml-diagram .mermaid');
-  if (!diagram) return showStatus('No diagram to download.', 'error');
+  // 1. Target the SVG element
+  const diagramNode = document.querySelector('#uml-diagram .mermaid svg');
+  if (!diagramNode) return showStatus('No diagram to download.', 'error');
+
+
+  // 2. Target the *first <g> element* inside the SVG
+  // This group holds the actual diagram content. Its BBox is the
+  // true, unconstrained size, ignoring the parent <svg>'s CSS.
+  const innerGroup = diagramNode.querySelector('g');
+  if (!innerGroup) return showStatus('Could not find diagram content (no <g> element).', 'error');
+ 
+  // Check if the library was loaded
+  if (typeof domtoimage === 'undefined') {
+    return showStatus('Download library (dom-to-image) not found. Please refresh the page.', 'error');
+  }
+
 
   try {
     showLoading(true);
     showStatus('Preparing download...', 'info');
 
-    const canvas = await html2canvas(diagram, { backgroundColor: '#ffffff', scale: 2 });
+
+    // 3. Get the BBox of the *inner group*. This gives us the true content
+    // dimensions AND its X/Y offset from the <svg> element's 0,0 point.
+    const bbox = innerGroup.getBBox();
+    const scale = 2; // For high-resolution
+
+
+    // 4. Define options for the library
+    const options = {
+      bgcolor: '#ffffff', // Set background color to white
+     
+      // The final image dimensions are the content's width/height, scaled
+      width: bbox.width * scale,
+      height: bbox.height * scale,
+     
+      // This 'style' object is applied to the *cloned <svg> node*
+      style: {
+        // Force the <svg> node to be the *true* content size
+        width: `${bbox.width}px`,
+        height: `${bbox.height}px`,
+       
+        // Undo the problematic CSS rule from the stylesheet
+        maxWidth: 'none !important',
+       
+        // Apply a transform to:
+        // 1. Scale up the content (for high-res)
+        // 2. Translate the content to align the BBox's top-left (bbox.x, bbox.y)
+        //    with the capture-canvas's top-left (0, 0).
+        transform: `scale(${scale}) translate(${-bbox.x}px, ${-bbox.y}px)`,
+        transformOrigin: 'top left'
+      }
+    };
+
+
+    // 5. Use domtoimage.toPng() - targeting the <svg> node
+    const pngDataUrl = await domtoimage.toPng(diagramNode, options);
+
+
+    // 6. Trigger the download
     const link = document.createElement('a');
     link.download = `uml_diagram_${parameterInput.value.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
-    link.href = canvas.toDataURL('image/png');
+    link.href = pngDataUrl;
     link.click();
 
+
     showStatus('Diagram downloaded successfully!', 'success');
+
+
   } catch (error) {
-    showStatus(`Error downloading diagram: ${error.message}`, 'error');
+    console.error("Download Error:", error);
+    let errorMsg = error.message || error.toString() || "An unknown error occurred";
+    showStatus(`Error downloading diagram: ${errorMsg}`, 'error');
   } finally {
     showLoading(false);
   }
 }
+
+
 
 // Event Listeners
 generateUmlBtn.addEventListener('click', generateUML);
