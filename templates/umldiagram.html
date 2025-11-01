@@ -342,7 +342,7 @@
       display: flex;
       flex-direction: column;
       height: fit-content;
-      max-height: calc(100vh - 80px);       /* full visible page height */ 
+      max-height: calc(100vh - 80px);
     }
 
     .diagram-header {
@@ -351,7 +351,7 @@
       border-bottom: 1px solid var(--border-color);
       display: flex;
       align-items: center;
-      justify-content: between;
+      justify-content: space-between;
     }
 
     .diagram-header h3 {
@@ -363,21 +363,82 @@
       gap: 0.4rem;
     }
 
+    /* Zoom Controls */
+    .zoom-controls {
+      display: flex;
+      align-items: center;
+      gap: 0.5rem;
+      background: white;
+      padding: 0.3rem;
+      border-radius: 0.5rem;
+      border: 1px solid var(--border-color);
+    }
+
+    .zoom-btn {
+      width: 32px;
+      height: 32px;
+      padding: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--primary-gradient);
+      color: white;
+      border: none;
+      border-radius: 0.3rem;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-size: 0.9rem;
+    }
+
+    .zoom-btn:hover:not(:disabled) {
+      transform: scale(1.05);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .zoom-btn:disabled {
+      opacity: 0.4;
+      cursor: not-allowed;
+    }
+
+    .zoom-level {
+      font-size: 0.75rem;
+      font-weight: 600;
+      color: var(--text-primary);
+      min-width: 50px;
+      text-align: center;
+    }
+
+    .zoom-reset {
+      width: auto;
+      padding: 0.3rem 0.6rem;
+      font-size: 0.7rem;
+    }
+
     .diagram-content {
       flex: 1;
       overflow: auto;
-      display: flex;
-      align-items: flex-start;
-      justify-content: center;
       min-height: 400px;
       padding: 2rem;
       position: relative;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .diagram-wrapper {
+      width: 100%;
+      height: 100%;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: visible;
     }
 
     .diagram-placeholder {
       text-align: center;
       color: var(--text-secondary);
       padding: 2rem;
+      width: 100%;
     }
 
     .diagram-placeholder i {
@@ -399,26 +460,25 @@
     }
 
     #uml-diagram {
-      width: 100%;
-      min-height: 400px;
-      display: flex;
+      display: inline-flex;
       justify-content: center;
-      align-items: flex-start;
-      overflow: visible;
+      align-items: center;
+      transition: transform 0.3s ease;
+      transform-origin: center center;
+      min-width: min-content;
+      min-height: min-content;
     }
 
     #uml-diagram .mermaid {
-      width: 100%;
-      min-height: 400px;
-      overflow: visible !important;
-      display: flex !important;
+      display: inline-flex !important;
       justify-content: center !important;
-      align-items: flex-start !important;
-      padding: 20px 0 !important;
+      align-items: center !important;
+      overflow: visible !important;
+      padding: 20px !important;
     }
 
     #uml-diagram .mermaid svg {
-      max-width: 100% !important;
+      max-width: none !important;
       height: auto !important;
       overflow: visible !important;
     }
@@ -429,7 +489,6 @@
       stroke-width: 2 !important;
     }
 
-    /* Style the class name headers (bold text) with full width colored background */
     #uml-diagram .mermaid .nodeLabel b {
       background: var(--class-banner-gradient) !important;
       color: white !important;
@@ -446,7 +505,6 @@
       border-bottom: 2px solid rgba(255, 255, 255, 0.2) !important;
     }
 
-    /* Alternative approach: Style the entire class name section with full width */
     #uml-diagram .mermaid .nodeLabel > span:first-child {
       background: var(--class-banner-gradient) !important;
       color: white !important;
@@ -561,7 +619,6 @@
       font-weight: 500;
     }
 
-    /* Close button for legend */
     .legend-close {
       position: absolute;
       top: 0.8rem;
@@ -585,12 +642,10 @@
       color: var(--text-primary);
     }
 
-    /* Enhanced styling for the class boxes */
     #uml-diagram .mermaid .node {
       filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.07)) !important;
     }
 
-    /* Style the node backgrounds */
     #uml-diagram .mermaid .node rect {
       fill: #ffffff !important;
       stroke: #d1d5db !important;
@@ -599,7 +654,6 @@
       ry: 8 !important;
     }
 
-    /* Style the relationship arrows */
     #uml-diagram .mermaid .edgePath path {
       stroke: var(--class-banner-color) !important;
       stroke-width: 2 !important;
@@ -610,7 +664,6 @@
       stroke: var(--class-banner-color) !important;
     }
 
-    /* Awesomplete styling */
     .awesomplete {
       width: 100%;
     }
@@ -628,7 +681,6 @@
       color: var(--accent-color);
     }
 
-    /* Responsive Design */
     @media (max-width: 1200px) {
       .main-container {
         grid-template-columns: 350px 1fr;
@@ -672,7 +724,6 @@
       }
     }
 
-    /* Animations */
     .fade-in {
       animation: fadeIn 0.6s ease-out;
     }
@@ -691,7 +742,6 @@
 </head>
 <body>
 
-  <!-- Header -->
   <header>
     <nav>
       <div class="logo">
@@ -706,9 +756,7 @@
     </nav>
   </header>
 
-  <!-- Main Container -->
   <div class="main-container">
-    <!-- Left Panel - Control Panel -->
     <div class="control-panel fade-in">
       <div class="panel-header">
         <h2>UML Configuration</h2>
@@ -716,18 +764,8 @@
       </div>
 
       <div class="panel-body">
-        <!-- File Status Section -->
-        <div class="section">
-          <div class="section-title">
-            <i class="fas fa-info-circle"></i>
-            File Status
-          </div>
-          <div class="status-message status-info" id="initial-status" style="display: block;">
-            Loading your uploaded files...
-          </div>
-        </div>
+        
 
-        <!-- Class Selection -->
         <div class="section">
           <div class="section-title">
             <i class="fas fa-cogs"></i>
@@ -746,17 +784,14 @@
           </div>
         </div>
 
-        <!-- Action Buttons -->
         <div class="section">
           <div class="section-title">
             <i class="fas fa-tools"></i>
             Actions
           </div>
           
-          <!-- Status Messages -->
           <div class="status-message" id="status-message"></div>
 
-          <!-- Loading -->
           <div class="loading" id="loading">
             <div class="spinner"></div>
             <p>Processing your request...</p>
@@ -776,13 +811,23 @@
       </div>
     </div>
 
-    <!-- Right Panel - Diagram Display -->
     <div class="diagram-panel fade-in">
       <div class="diagram-header">
         <h3><i class="fas fa-sitemap"></i> UML Class Diagram</h3>
+        <div class="zoom-controls" id="zoom-controls" style="display: none;">
+          <button class="zoom-btn" id="zoom-out" title="Zoom Out">
+            <i class="fas fa-minus"></i>
+          </button>
+          <span class="zoom-level" id="zoom-level">100%</span>
+          <button class="zoom-btn" id="zoom-in" title="Zoom In">
+            <i class="fas fa-plus"></i>
+          </button>
+          <button class="zoom-btn zoom-reset" id="zoom-reset" title="Reset Zoom">
+            <i class="fas fa-undo"></i>
+          </button>
+        </div>
       </div>
       <div class="diagram-content">
-        <!-- Legend -->
         <div class="legend-container">
           <button class="legend-toggle" id="legend-toggle">
             <i class="fas fa-info-circle"></i>
@@ -822,35 +867,88 @@
           </div>
         </div>
 
-        <div id="uml-diagram">
-          <div class="diagram-placeholder">
-            <i class="fas fa-sitemap"></i>
-            <h4>No Diagram Generated</h4>
-            <p>Select a class from the left panel and click "Generate UML Diagram" to visualize your class relationships and structure.</p>
+        <div class="diagram-wrapper">
+          <div id="uml-diagram">
+            <div class="diagram-placeholder">
+              <i class="fas fa-sitemap"></i>
+              <h4>No Diagram Generated</h4>
+              <p>Select a class from the left panel and click "Generate UML Diagram" to visualize your class relationships and structure.</p>
+            </div>
           </div>
         </div>
       </div>
     </div>
   </div>
 
-  <!-- JavaScript Logic -->
   <script>
 let classList = [];
 let isInitialized = false;
+let currentZoom = 1.0;
+const MIN_ZOOM = 0.25;
+const MAX_ZOOM = 3.0;
+const ZOOM_STEP = 0.1;
 
-// DOM Elements
 const parameterInput = document.getElementById('parameter-input');
 const depthInput = document.getElementById('depth-input');
 const generateUmlBtn = document.getElementById('generate-uml');
 const downloadImageBtn = document.getElementById('download-image');
 const statusMessage = document.getElementById('status-message');
-const initialStatus = document.getElementById('initial-status');
 const loading = document.getElementById('loading');
 const legendToggle = document.getElementById('legend-toggle');
 const legendPanel = document.getElementById('legend-panel');
 const legendClose = document.getElementById('legend-close');
+const zoomControls = document.getElementById('zoom-controls');
+const zoomInBtn = document.getElementById('zoom-in');
+const zoomOutBtn = document.getElementById('zoom-out');
+const zoomResetBtn = document.getElementById('zoom-reset');
+const zoomLevelDisplay = document.getElementById('zoom-level');
+const umlDiagram = document.getElementById('uml-diagram');
 
-// Legend functionality
+// Calculate optimal zoom based on diagram complexity
+function calculateOptimalZoom(classCount, depth) {
+  // For simple diagrams (1-2 classes), zoom out significantly
+  if (classCount === 1) {
+    return 0.5; // 50% for single class
+  } else if (classCount === 2) {
+    return 0.6; // 60% for two classes
+  } else if (classCount === 3) {
+    return 0.8; // 80% for three classes
+  } else if (classCount <= 5) {
+    return 1.0; // 100% for 4-5 classes (sweet spot)
+  } else if (classCount <= 8) {
+    return 0.9; // 90% for 6-8 classes
+  } else if (classCount <= 12) {
+    return 0.75; // 75% for 9-12 classes
+  } else {
+    return 0.6; // 60% for very complex diagrams
+  }
+}
+
+function updateZoom(newZoom) {
+  currentZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
+  umlDiagram.style.transform = `scale(${currentZoom})`;
+  zoomLevelDisplay.textContent = `${Math.round(currentZoom * 100)}%`;
+  
+  zoomOutBtn.disabled = currentZoom <= MIN_ZOOM;
+  zoomInBtn.disabled = currentZoom >= MAX_ZOOM;
+}
+
+function zoomIn() {
+  updateZoom(currentZoom + ZOOM_STEP);
+}
+
+function zoomOut() {
+  updateZoom(currentZoom - ZOOM_STEP);
+}
+
+function resetZoom(optimalZoom = 1.0) {
+  updateZoom(optimalZoom);
+}
+
+function showZoomControls(show = true) {
+  zoomControls.style.display = show ? 'flex' : 'none';
+}
+
 function toggleLegend() {
   legendPanel.classList.toggle('show');
 }
@@ -859,7 +957,6 @@ function closeLegend() {
   legendPanel.classList.remove('show');
 }
 
-// Close legend when clicking outside
 document.addEventListener('click', function(event) {
   const legendContainer = document.querySelector('.legend-container');
   if (!legendContainer.contains(event.target)) {
@@ -867,7 +964,6 @@ document.addEventListener('click', function(event) {
   }
 });
 
-// Utility Functions
 function showStatus(message, type = 'info') {
   statusMessage.textContent = message;
   statusMessage.className = `status-message status-${type}`;
@@ -884,11 +980,11 @@ function showLoading(show = true) {
 function updateButtonStates() {
   const hasValidClass = parameterInput.value && classList.includes(parameterInput.value);
   const hasDiagram = document.querySelector('#uml-diagram .mermaid');
-  generateUmlBtn.disabled = !parameterInput.value; // always clickable if user typed something
+  generateUmlBtn.disabled = !parameterInput.value;
   downloadImageBtn.disabled = !hasDiagram;
 }
 
-function renderMermaid(uml) {
+function renderMermaid(uml, classCount, depth) {
   const container = document.getElementById('uml-diagram');
   container.innerHTML = '';
   const newDiagram = document.createElement('div');
@@ -898,16 +994,23 @@ function renderMermaid(uml) {
 
   mermaid.initialize({ startOnLoad: false, theme: 'default' });
 
-  setTimeout(() => mermaid.init(undefined, newDiagram).then(updateButtonStates), 100);
+  setTimeout(() => {
+    mermaid.init(undefined, newDiagram).then(() => {
+      updateButtonStates();
+      // Calculate and apply optimal zoom based on complexity
+      const optimalZoom = calculateOptimalZoom(classCount, depth);
+      resetZoom(optimalZoom);
+      showZoomControls(true);
+      console.log(`Applied optimal zoom: ${Math.round(optimalZoom * 100)}% for ${classCount} classes at depth ${depth}`);
+    });
+  }, 100);
 }
 
-// Load classes from uploaded files
 async function loadClasses() {
-  if (isInitialized && classList.length > 0) return; // skip if already loaded
+  if (isInitialized && classList.length > 0) return;
 
   try {
     showLoading(true);
-    showStatus('Loading classes...', 'info');
 
     const response = await fetch('/upload', {
       method: 'POST',
@@ -920,10 +1023,7 @@ async function loadClasses() {
       classList = result.classes || [];
       if (classList.length > 0) {
         new Awesomplete(parameterInput, { list: classList, minChars: 1, autoFirst: true, maxItems: 10 });
-        showStatus(`Successfully loaded ${classList.length} classes!`, 'success');
         isInitialized = true;
-      } else {
-        showStatus('No classes found.', 'error');
       }
     } else throw new Error(result.error || 'Failed to load classes');
   } catch (error) {
@@ -934,7 +1034,6 @@ async function loadClasses() {
   }
 }
 
-// Generate UML diagram
 async function generateUML() {
   const selectedClass = parameterInput.value.trim();
   const depth = parseInt(depthInput.value) || 1;
@@ -945,7 +1044,6 @@ async function generateUML() {
     showLoading(true);
     showStatus('Processing...', 'info');
 
-    // Load classes if not loaded
     await loadClasses();
 
     if (!classList.includes(selectedClass)) {
@@ -953,7 +1051,6 @@ async function generateUML() {
       return;
     }
 
-    // Fetch UML diagram
     const response = await fetch('/uml', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -961,9 +1058,9 @@ async function generateUML() {
     });
 
     const data = await response.json();
-    if (data.uml) {
-      renderMermaid(data.uml);
-      showStatus('UML diagram generated successfully!', 'success');
+    if (data.uml && data.class_count !== undefined) {
+      renderMermaid(data.uml, data.class_count, depth);
+      showStatus(`UML diagram generated with ${data.class_count} classes!`, 'success');
     } else throw new Error('No UML data received');
   } catch (error) {
     showStatus(`Error: ${error.message}`, 'error');
@@ -972,77 +1069,45 @@ async function generateUML() {
   }
 }
 
-// Download diagram as PNG
-
 async function downloadDiagram() {
-  // 1. Target the SVG element
   const diagramNode = document.querySelector('#uml-diagram .mermaid svg');
   if (!diagramNode) return showStatus('No diagram to download.', 'error');
 
-
-  // 2. Target the *first <g> element* inside the SVG
-  // This group holds the actual diagram content. Its BBox is the
-  // true, unconstrained size, ignoring the parent <svg>'s CSS.
   const innerGroup = diagramNode.querySelector('g');
   if (!innerGroup) return showStatus('Could not find diagram content (no <g> element).', 'error');
  
-  // Check if the library was loaded
   if (typeof domtoimage === 'undefined') {
     return showStatus('Download library (dom-to-image) not found. Please refresh the page.', 'error');
   }
-
 
   try {
     showLoading(true);
     showStatus('Preparing download...', 'info');
 
-
-    // 3. Get the BBox of the *inner group*. This gives us the true content
-    // dimensions AND its X/Y offset from the <svg> element's 0,0 point.
     const bbox = innerGroup.getBBox();
-    const scale = 2; // For high-resolution
+    const scale = 2;
 
-
-    // 4. Define options for the library
     const options = {
-      bgcolor: '#ffffff', // Set background color to white
-     
-      // The final image dimensions are the content's width/height, scaled
+      bgcolor: '#ffffff',
       width: bbox.width * scale,
       height: bbox.height * scale,
-     
-      // This 'style' object is applied to the *cloned <svg> node*
       style: {
-        // Force the <svg> node to be the *true* content size
         width: `${bbox.width}px`,
         height: `${bbox.height}px`,
-       
-        // Undo the problematic CSS rule from the stylesheet
         maxWidth: 'none !important',
-       
-        // Apply a transform to:
-        // 1. Scale up the content (for high-res)
-        // 2. Translate the content to align the BBox's top-left (bbox.x, bbox.y)
-        //    with the capture-canvas's top-left (0, 0).
         transform: `scale(${scale}) translate(${-bbox.x}px, ${-bbox.y}px)`,
         transformOrigin: 'top left'
       }
     };
 
-
-    // 5. Use domtoimage.toPng() - targeting the <svg> node
     const pngDataUrl = await domtoimage.toPng(diagramNode, options);
 
-
-    // 6. Trigger the download
     const link = document.createElement('a');
     link.download = `uml_diagram_${parameterInput.value.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
     link.href = pngDataUrl;
     link.click();
 
-
     showStatus('Diagram downloaded successfully!', 'success');
-
 
   } catch (error) {
     console.error("Download Error:", error);
@@ -1053,22 +1118,34 @@ async function downloadDiagram() {
   }
 }
 
-
-
-// Event Listeners
 generateUmlBtn.addEventListener('click', generateUML);
 downloadImageBtn.addEventListener('click', downloadDiagram);
 parameterInput.addEventListener('input', updateButtonStates);
 depthInput.addEventListener('change', updateButtonStates);
 legendToggle.addEventListener('click', toggleLegend);
 legendClose.addEventListener('click', closeLegend);
+zoomInBtn.addEventListener('click', zoomIn);
+zoomOutBtn.addEventListener('click', zoomOut);
+zoomResetBtn.addEventListener('click', () => resetZoom(currentZoom));
 
-// Initialize page (just loads classes in background for suggestion box)
+document.addEventListener('keydown', (e) => {
+  if (e.ctrlKey || e.metaKey) {
+    if (e.key === '+' || e.key === '=') {
+      e.preventDefault();
+      zoomIn();
+    } else if (e.key === '-') {
+      e.preventDefault();
+      zoomOut();
+    } else if (e.key === '0') {
+      e.preventDefault();
+      resetZoom(1.0);
+    }
+  }
+});
+
 document.addEventListener('DOMContentLoaded', async () => {
   await loadClasses();
 });
-
-
   </script>
 </body>
 </html>

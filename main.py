@@ -499,20 +499,20 @@ def generate_uml():
     depth = int(data.get("depth", 1))
     
     if not selected_class:
-        return jsonify({"uml": "graph TD\n%% No class selected"})
+        return jsonify({"uml": "graph TD\n%% No class selected", "class_count": 0})
 
     # Handle "All Classes" selection
     if selected_class == "All Classes":
         return generate_all_classes_uml()
     
     if selected_class not in uml_data:
-        return jsonify({"uml": "graph TD\n%% Invalid class selected"})
+        return jsonify({"uml": "graph TD\n%% Invalid class selected", "class_count": 0})
 
     visited = set()
     result_classes = {}
     queue = deque()
     
-    # KEY FIX: Only start from the selected class (leaf), don't include parent hierarchy
+    # Start from the selected class (leaf)
     queue.append((selected_class, 0))
 
     while queue:
@@ -532,7 +532,7 @@ def generate_uml():
     for cls, info in result_classes.items():
         safe_cls = cls.replace("/", "_").replace("-", "_").replace(".", "_")
         
-        # KEY FIX: Extract only the leaf class name for display
+        # Extract only the leaf class name for display
         display_name = cls.split("/")[-1] if "/" in cls else cls
         
         label_lines = [f"<b>{display_name}</b>", "<hr>"]
@@ -556,12 +556,16 @@ def generate_uml():
                 else:
                     lines.append(f"{from_cls} --> {to_cls}")
 
-    return jsonify({"uml": "\n".join(lines)})
+    # Return class count along with UML
+    return jsonify({
+        "uml": "\n".join(lines),
+        "class_count": len(result_classes)
+    })
 
 def generate_all_classes_uml():
     """Generate UML diagram for all classes - showing only leaf names"""
     if not uml_data:
-        return jsonify({"uml": "graph TD\n%% No classes available"})
+        return jsonify({"uml": "graph TD\n%% No classes available", "class_count": 0})
 
     lines = ["graph TD"]
 
@@ -569,7 +573,7 @@ def generate_all_classes_uml():
     for cls, info in uml_data.items():
         safe_cls = cls.replace("/", "_").replace("-", "_").replace(".", "_")
         
-        # KEY FIX: Extract only the leaf class name for display
+        # Extract only the leaf class name for display
         display_name = cls.split("/")[-1] if "/" in cls else cls
         
         label_lines = [f"<b>{display_name}</b>", "<hr>"]
@@ -594,8 +598,11 @@ def generate_all_classes_uml():
                 else:
                     lines.append(f"{from_cls} --> {to_cls}")
 
-    return jsonify({"uml": "\n".join(lines)})
-
+    # Return class count along with UML
+    return jsonify({
+        "uml": "\n".join(lines),
+        "class_count": len(uml_data)
+    })
 
 @app.route('/clear-session', methods=['POST'])
 def clear_session():
