@@ -5,6 +5,7 @@ import os
 from collections import defaultdict, deque
 import tempfile
 import shutil
+import re
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-change-this-in-production'
@@ -21,6 +22,33 @@ uml_data = defaultdict(lambda: {
     "relationships": set(),
     "multiplicities": {}
 })
+
+# Maximum attributes to show before "View More"
+MAX_VISIBLE_ATTRIBUTES = 10
+
+def sanitize_for_mermaid(text):
+    """Sanitize text for use in Mermaid diagrams"""
+    if not text:
+        return ""
+    # Remove or replace problematic characters
+    text = str(text).strip()
+    # Replace quotes and special HTML characters
+    text = text.replace('"', "'")
+    text = text.replace('<', '&lt;')
+    text = text.replace('>', '&gt;')
+    # Remove newlines and extra spaces
+    text = ' '.join(text.split())
+    return text
+
+def create_safe_node_id(class_name):
+    """Create a safe node ID from class name"""
+    # Replace special characters with underscores
+    safe_id = re.sub(r'[^a-zA-Z0-9]', '_', class_name)
+    # Remove consecutive underscores
+    safe_id = re.sub(r'_+', '_', safe_id)
+    # Remove leading/trailing underscores
+    safe_id = safe_id.strip('_')
+    return safe_id if safe_id else 'node'
 
 # --------- Parameter Relation Finder (NEW LOGIC) ---------
 def detect_header(df, search_columns):
@@ -463,6 +491,7 @@ def delete_all_files():
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route('/upload', methods=['POST'])
+@app.route('/upload', methods=['POST'])
 def upload_file():
     """Handle UML diagram generation using session files"""
     global uml_data
@@ -477,16 +506,20 @@ def upload_file():
     # If UML data not already loaded, load it
     if not uml_data:
         classes = load_uml_data(file_paths)
+        # Create a list of class objects with full path and display name
+        classes_data = [{"value": cls, "label": cls.split("/")[-1]} for cls in classes]
         # Add "All Classes" option at the beginning
-        classes_with_all = ["All Classes"] + classes
+        classes_with_all = [{"value": "All Classes", "label": "All Classes"}] + classes_data
         return jsonify({
             "success": True,
             "classes": classes_with_all
         })
     else:
         all_classes = sorted(uml_data.keys())
+        # Create a list of class objects with full path and display name
+        classes_data = [{"value": cls, "label": cls.split("/")[-1]} for cls in all_classes]
         # Add "All Classes" option at the beginning
-        classes_with_all = ["All Classes"] + all_classes
+        classes_with_all = [{"value": "All Classes", "label": "All Classes"}] + classes_data
         return jsonify({
             "success": True,
             "classes": classes_with_all
@@ -530,29 +563,49 @@ def generate_uml():
     lines = ["graph TD"]
 
     for cls, info in result_classes.items():
-        safe_cls = cls.replace("/", "_").replace("-", "_").replace(".", "_")
+        safe_cls = create_safe_node_id(cls)
         
         # Extract only the leaf class name for display
         display_name = cls.split("/")[-1] if "/" in cls else cls
+        display_name = sanitize_for_mermaid(display_name)
         
         label_lines = [f"<b>{display_name}</b>", "<hr>"]
+        
+        attributes = info["attributes"]
+        visible_attrs = attributes[:MAX_VISIBLE_ATTRIBUTES]
+        hidden_count = len(attributes) - MAX_VISIBLE_ATTRIBUTES
 
-        for attr in info["attributes"]:
-            label = f"<span style='color:{attr['color']}'>+ {attr['name']} : {attr['type']} {attr['mandatory']}</span>"
+        for attr in visible_attrs:
+            attr_name = sanitize_for_mermaid(attr['name'])
+            attr_type = sanitize_for_mermaid(attr['type'])
+            attr_mand = sanitize_for_mermaid(attr['mandatory'])
+            
+            # Skip attributes with empty names
+            if not attr_name or attr_name == 'nan':
+                continue
+                
+            label = f"<span style='color:{attr['color']}'>+ {attr_name} : {attr_type} {attr_mand}</span>"
             label_lines.append(label)
+        
+        # Add "View More" indicator if there are hidden attributes
+        if hidden_count > 0:
+            label_lines.append(f"<span style='color:#3b82f6;font-weight:600;font-style:italic'>... +{hidden_count} more attributes</span>")
 
-        html_label = "<br>".join(label_lines).replace('"', '&quot;')
+        html_label = "<br>".join(label_lines)
+        # Use #quot; instead of quotes in the label
+        html_label = html_label.replace('"', '#quot;')
         lines.append(f'{safe_cls}["{html_label}"]')
 
     for cls, info in result_classes.items():
-        from_cls = cls.replace("/", "_").replace("-", "_").replace(".", "_")
+        from_cls = create_safe_node_id(cls)
         for rel in info["relationships"]:
             if rel in result_classes:
-                to_cls = rel.replace("/", "_").replace("-", "_").replace(".", "_")
+                to_cls = create_safe_node_id(rel)
                 # Add multiplicity if available
                 multiplicity = info["multiplicities"].get(rel, "")
                 if multiplicity:
-                    lines.append(f'{from_cls} -->|"{multiplicity}"| {to_cls}')
+                    multiplicity = sanitize_for_mermaid(multiplicity)
+                    lines.append(f'{from_cls} -->|{multiplicity}| {to_cls}')
                 else:
                     lines.append(f"{from_cls} --> {to_cls}")
 
@@ -571,30 +624,50 @@ def generate_all_classes_uml():
 
     # Add all classes with their attributes
     for cls, info in uml_data.items():
-        safe_cls = cls.replace("/", "_").replace("-", "_").replace(".", "_")
+        safe_cls = create_safe_node_id(cls)
         
         # Extract only the leaf class name for display
         display_name = cls.split("/")[-1] if "/" in cls else cls
+        display_name = sanitize_for_mermaid(display_name)
         
         label_lines = [f"<b>{display_name}</b>", "<hr>"]
+        
+        attributes = info["attributes"]
+        visible_attrs = attributes[:MAX_VISIBLE_ATTRIBUTES]
+        hidden_count = len(attributes) - MAX_VISIBLE_ATTRIBUTES
 
-        for attr in info["attributes"]:
-            label = f"<span style='color:{attr['color']}'>+ {attr['name']} : {attr['type']} {attr['mandatory']}</span>"
-            label_lines.append(label)
+        for attr in visible_attrs:
+            attr_name = sanitize_for_mermaid(attr['name'])
+            attr_type = sanitize_for_mermaid(attr['type'])
+            attr_mand = sanitize_for_mermaid(attr['mandatory'])
             
-        html_label = "<br>".join(label_lines).replace('"', '&quot;')
+            # Skip attributes with empty names
+            if not attr_name or attr_name == 'nan':
+                continue
+                
+            label = f"<span style='color:{attr['color']}'>+ {attr_name} : {attr_type} {attr_mand}</span>"
+            label_lines.append(label)
+        
+        # Add "View More" indicator if there are hidden attributes
+        if hidden_count > 0:
+            label_lines.append(f"<span style='color:#3b82f6;font-weight:600;font-style:italic'>... +{hidden_count} more attributes</span>")
+            
+        html_label = "<br>".join(label_lines)
+        # Use #quot; instead of quotes in the label
+        html_label = html_label.replace('"', '#quot;')
         lines.append(f'{safe_cls}["{html_label}"]')
 
     # Add all relationships with multiplicity
     for cls, info in uml_data.items():
-        from_cls = cls.replace("/", "_").replace("-", "_").replace(".", "_")
+        from_cls = create_safe_node_id(cls)
         for rel in info["relationships"]:
             if rel in uml_data:  # Only add relationship if target class exists
-                to_cls = rel.replace("/", "_").replace("-", "_").replace(".", "_")
+                to_cls = create_safe_node_id(rel)
                 # Add multiplicity if available
                 multiplicity = info["multiplicities"].get(rel, "")
                 if multiplicity:
-                    lines.append(f'{from_cls} -->|"{multiplicity}"| {to_cls}')
+                    multiplicity = sanitize_for_mermaid(multiplicity)
+                    lines.append(f'{from_cls} -->|{multiplicity}| {to_cls}')
                 else:
                     lines.append(f"{from_cls} --> {to_cls}")
 

@@ -881,7 +881,9 @@
   </div>
 
   <script>
+
 let classList = [];
+let classDataMap = {}; // Map display names to full values
 let isInitialized = false;
 let currentZoom = 1.0;
 const MIN_ZOOM = 0.25;
@@ -912,7 +914,7 @@ function calculateOptimalZoom(classCount, depth) {
   } else if (classCount === 2) {
     return 0.6; // 60% for two classes
   } else if (classCount === 3) {
-    return 0.8; // 80% for three classes
+    return 0.9; // 80% for three classes
   } else if (classCount <= 5) {
     return 1.0; // 100% for 4-5 classes (sweet spot)
   } else if (classCount <= 8) {
@@ -1020,9 +1022,24 @@ async function loadClasses() {
 
     const result = await response.json();
     if (result.success) {
-      classList = result.classes || [];
-      if (classList.length > 0) {
-        new Awesomplete(parameterInput, { list: classList, minChars: 1, autoFirst: true, maxItems: 10 });
+      const classesData = result.classes || [];
+      if (classesData.length > 0) {
+        // Extract display labels for autocomplete
+        classList = classesData.map(c => c.label);
+        
+        // Create mapping from label to value
+        classDataMap = {};
+        classesData.forEach(c => {
+          classDataMap[c.label] = c.value;
+        });
+        
+        // Initialize Awesomplete with display labels only
+        new Awesomplete(parameterInput, { 
+          list: classList, 
+          minChars: 1, 
+          autoFirst: true, 
+          maxItems: 10 
+        });
         isInitialized = true;
       }
     } else throw new Error(result.error || 'Failed to load classes');
@@ -1035,10 +1052,10 @@ async function loadClasses() {
 }
 
 async function generateUML() {
-  const selectedClass = parameterInput.value.trim();
+  const selectedLabel = parameterInput.value.trim();
   const depth = parseInt(depthInput.value) || 1;
 
-  if (!selectedClass) return showStatus('Please enter a class name.', 'error');
+  if (!selectedLabel) return showStatus('Please enter a class name.', 'error');
 
   try {
     showLoading(true);
@@ -1046,10 +1063,13 @@ async function generateUML() {
 
     await loadClasses();
 
-    if (!classList.includes(selectedClass)) {
+    if (!classList.includes(selectedLabel)) {
       showStatus('Select a valid class from the suggestions.', 'error');
       return;
     }
+
+    // Get the full class path from the label
+    const selectedClass = classDataMap[selectedLabel];
 
     const response = await fetch('/uml', {
       method: 'POST',
@@ -1068,6 +1088,7 @@ async function generateUML() {
     showLoading(false);
   }
 }
+
 
 async function downloadDiagram() {
   const diagramNode = document.querySelector('#uml-diagram .mermaid svg');
@@ -1103,7 +1124,9 @@ async function downloadDiagram() {
     const pngDataUrl = await domtoimage.toPng(diagramNode, options);
 
     const link = document.createElement('a');
-    link.download = `uml_diagram_${parameterInput.value.replace(/[^a-zA-Z0-9]/g, '_')}.png`;
+    // Use the display label for filename
+    const filename = parameterInput.value.replace(/[^a-zA-Z0-9]/g, '_');
+    link.download = `uml_diagram_${filename}.png`;
     link.href = pngDataUrl;
     link.click();
 
