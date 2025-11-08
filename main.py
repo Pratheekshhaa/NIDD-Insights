@@ -551,6 +551,35 @@ def delete_all_files():
         return jsonify({"success": False, "error": str(e)}), 500
 
 
+@app.route('/delete-file', methods=['DELETE'])
+def delete_file():
+    """Delete a single file from the uploads folder"""
+    try:
+        data = request.get_json()
+        filename = data.get('filename')
+
+        if not filename:
+            return jsonify({"success": False, "error": "No filename provided"}), 400
+
+        safe_filename = secure_filename(filename)
+        file_path = os.path.join(app.config['UPLOAD_FOLDER'], safe_filename)
+
+        if not os.path.exists(file_path):
+            return jsonify({"success": False, "error": "File not found"}), 404
+
+        if not safe_filename.lower().endswith(('.xls', '.xlsx', '.xlsm')):
+            return jsonify({"success": False, "error": "Invalid file type"}), 400
+
+        os.remove(file_path)
+
+        return jsonify({
+            "success": True,
+            "message": f"File '{safe_filename}' deleted successfully"
+        })
+    except Exception as e:
+        print(f"Error deleting file: {e}")
+        return jsonify({"success": False, "error": str(e)}), 500
+
 # ----------------- UML class loading for UI -----------------
 @app.route('/upload', methods=['POST'])
 def upload_file():

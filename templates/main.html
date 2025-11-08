@@ -333,6 +333,33 @@
       font-weight: 600;
     }
 
+    .delete-file-btn {
+  background: rgba(239, 68, 68, 0.1);
+  color: var(--error-color);
+  border: none;
+  cursor: pointer;
+  padding: 0.3rem 0.5rem;
+  border-radius: 0.3rem;
+  transition: all 0.3s ease;
+  font-size: 0.7rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-weight: 500;
+  margin-left: 0.5rem;
+}
+
+.delete-file-btn:hover {
+  background: var(--error-color);
+  color: white;
+  transform: scale(1.05);
+}
+
+.file-actions {
+  display: flex;
+  align-items: center;
+}
+
     /* Form Elements */
     .form-group {
       margin-bottom: 1.2rem;
@@ -780,6 +807,48 @@
       }
     });
 
+// Delete individual file handler
+function deleteIndividualFile(filename) {
+  console.log('Delete function called for:', filename);
+  
+  // Use setTimeout to ensure the confirm dialog works properly
+  setTimeout(() => {
+    const confirmed = confirm(`Are you sure you want to delete "${filename}"?`);
+    console.log('User confirmed:', confirmed);
+    
+    if (confirmed) {
+      console.log('Sending delete request...');
+      fetch('/delete-file', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ filename: filename })
+      })
+        .then(response => {
+          console.log('Response received:', response.status);
+          return response.json();
+        })
+        .then(data => {
+          console.log('Data received:', data);
+          if (data.success) {
+            showMessage(`File "${filename}" deleted successfully`, 'success');
+            // Remove from selectedAvailableFiles if it was selected
+            selectedAvailableFiles = selectedAvailableFiles.filter(f => f.name !== filename);
+            updateGenerateButton();
+            loadAvailableFiles();
+          } else {
+            showMessage(data.error || 'Failed to delete file', 'error');
+          }
+        })
+        .catch(err => {
+          console.error('Error:', err);
+          showMessage('Error deleting file: ' + err.message, 'error');
+        });
+    }
+  }, 100);
+}
+
     // Load available files from uploads folder
     async function loadAvailableFiles() {
       try {
@@ -806,40 +875,56 @@
       }
     }
 
-    // Display available files
-    function displayAvailableFiles() {
-      if (availableFiles.length === 0) {
-        availableFilesList.innerHTML = `
-          <div class="empty-state">
-            <i class="fas fa-folder-open"></i>
-            <p>No files found in uploads folder</p>
-          </div>
-        `;
-        return;
-      }
 
-      availableFilesList.innerHTML = '';
-      availableFiles.forEach((file, index) => {
-        const fileItem = document.createElement('div');
-        fileItem.className = 'available-file-item';
-        fileItem.innerHTML = `
-          <div class="available-file-info">
-            <div class="available-file-icon">
-              <i class="fas fa-file-excel"></i>
-            </div>
-            <div class="available-file-details">
-              <h5>${file.name}</h5>
-              <div class="available-file-size">${(file.size / 1024).toFixed(1)} KB</div>
-            </div>
-          </div>
-          <div class="selected-badge">
-            <i class="fas fa-check"></i> Selected
-          </div>
-        `;
-        availableFilesList.appendChild(fileItem);
-      });
-    }
+// Display available files
+function displayAvailableFiles() {
+  if (availableFiles.length === 0) {
+    availableFilesList.innerHTML = `
+      <div class="empty-state">
+        <i class="fas fa-folder-open"></i>
+        <p>No files found in uploads folder</p>
+      </div>
+    `;
+    return;
+  }
 
+  availableFilesList.innerHTML = '';
+  availableFiles.forEach((file, index) => {
+    const fileItem = document.createElement('div');
+    fileItem.className = 'available-file-item';
+    fileItem.innerHTML = `
+      <div class="available-file-info">
+        <div class="available-file-icon">
+          <i class="fas fa-file-excel"></i>
+        </div>
+        <div class="available-file-details">
+          <h5>${file.name}</h5>
+          <div class="available-file-size">${(file.size / 1024).toFixed(1)} KB</div>
+        </div>
+      </div>
+      <div class="file-actions">
+        <div class="selected-badge">
+          <i class="fas fa-check"></i> Selected
+        </div>
+        <button type="button" class="delete-file-btn" title="Delete this file">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+    `;
+    
+    // Add delete handler for this specific file
+    const deleteBtn = fileItem.querySelector('.delete-file-btn');
+    deleteBtn.addEventListener('click', function(e) {
+      e.preventDefault();
+      e.stopPropagation();
+      e.stopImmediatePropagation();
+      deleteIndividualFile(file.name);
+      return false;
+    });
+    
+    availableFilesList.appendChild(fileItem);
+  });
+}
     // Diagram type selection
     document.querySelectorAll('.diagram-card').forEach(card => {
       card.addEventListener('click', () => {
