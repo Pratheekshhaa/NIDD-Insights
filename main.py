@@ -3,7 +3,6 @@ from werkzeug.utils import secure_filename
 import pandas as pd
 import os
 from collections import defaultdict, deque
-import tempfile
 import shutil
 import re
 
@@ -15,52 +14,60 @@ app.config['TEMP_FOLDER'] = 'temp_uploads'
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['TEMP_FOLDER'], exist_ok=True)
 
-parameters_list = []
-parameter_relations = {}
+# ----------------- Globals -----------------
+parameters_list = []  # used by dropdown: ONLY abbreviations
+parameter_relations = {}  # key: Parameter Name (col D), value: list of related (from col P)
 uml_data = defaultdict(lambda: {
     "attributes": [],
     "relationships": set(),
     "multiplicities": {}
 })
 
+# NEW: mappings for Option A
+abbrev_to_param = {}   # abbrev -> Parameter Name
+param_to_abbrev = {}   # Parameter Name -> abbrev
+
 # Maximum attributes to show before "View More"
 MAX_VISIBLE_ATTRIBUTES = 10
 
+
+# ----------------- Helpers -----------------
 def sanitize_for_mermaid(text):
-    """Sanitize text for use in Mermaid diagrams"""
     if not text:
         return ""
-    # Remove or replace problematic characters
     text = str(text).strip()
-    # Replace quotes and special HTML characters
     text = text.replace('"', "'")
     text = text.replace('<', '&lt;')
     text = text.replace('>', '&gt;')
-    # Remove newlines and extra spaces
     text = ' '.join(text.split())
     return text
 
+
 def create_safe_node_id(class_name):
-    """Create a safe node ID from class name"""
-    # Replace special characters with underscores
     safe_id = re.sub(r'[^a-zA-Z0-9]', '_', class_name)
-    # Remove consecutive underscores
     safe_id = re.sub(r'_+', '_', safe_id)
-    # Remove leading/trailing underscores
     safe_id = safe_id.strip('_')
     return safe_id if safe_id else 'node'
 
-# --------- Parameter Relation Finder (NEW LOGIC) ---------
+
+# --------- Parameter Relation Finder ---------
 def detect_header(df, search_columns):
-    """Auto-detect header row by looking for columns that contain 'Parameter' or similar keywords"""
-    for i in range(min(10, len(df))):  # Check first 10 rows
+    """Auto-detect header row by looking for keywords"""
+    for i in range(min(10, len(df))):
         row = df.iloc[i].astype(str).str.lower()
         if any(keyword in row[j] for keyword in search_columns for j in range(len(row))):
             return i
-    return 0  # fallback
+    return 0
+
 
 def load_excel_data(file_paths):
-    """Load parameter data from multiple Excel files using column D (index 3) for input and P (index 15) for relations"""
+    """
+    Load parameter data from multiple Excel files.
+    - Reads FULL Parameter Name column (Column D / index 3)
+    - No filtering (no 'id' keyword filtering)
+    - Stores ALL parameter names in dropdown list
+    - Column P (index 15) used for relations
+    """
     global parameters_list, parameter_relations
     try:
         parameters_list = []
@@ -73,56 +80,70 @@ def load_excel_data(file_paths):
                 if df.shape[1] < 16:
                     continue
 
+                # Auto-detect header
                 header_row = detect_header(df, search_columns=["parameter", "relation"])
                 df.columns = df.iloc[header_row]
                 df = df.iloc[header_row + 1:].reset_index(drop=True)
 
-                col_d, col_p = df.columns[3], df.columns[15]
+                # Columns:
+                col_d = df.columns[2]      # ✅ FULL Parameter Names
+                col_p = df.columns[15]     # ✅ Relations
+
+                # Drop only if Parameter Name column is empty entirely
                 df_clean = df.dropna(subset=[col_d], how='all')
 
                 for _, row in df_clean.iterrows():
                     param_name = str(row[col_d]).strip() if pd.notna(row[col_d]) else ""
                     related_params = str(row[col_p]).strip() if pd.notna(row[col_p]) else ""
 
-                    if not param_name or param_name.lower() == 'nan':
+                    # ✅ Skip empty or "nan" names
+                    if not param_name or param_name.lower() == "nan":
                         continue
 
+                    # ✅ Add ALL Parameter Names (no filtering)
                     if param_name not in parameters_list:
                         parameters_list.append(param_name)
 
-                    if related_params and related_params.lower() != 'nan':
+                    # ✅ Store relations
+                    if related_params and related_params.lower() != "nan":
                         existing = parameter_relations.get(param_name, [])
                         if isinstance(existing, str):
                             existing = [] if existing == "No related parameters found" else [existing]
+
                         new_rels = [r.strip() for r in related_params.split(";") if r.strip()]
                         parameter_relations[param_name] = list(set(existing + new_rels))
+
                     else:
                         if param_name not in parameter_relations:
                             parameter_relations[param_name] = "No related parameters found"
 
+        # ✅ Sort dropdown alphabetically
         parameters_list.sort()
+
     except Exception as e:
         print(f"Failed to load Excel: {e}")
 
-# --------- UML Diagram Generator (UPDATED WITH MULTIPLICITY) ---------
+
+
+# --------- UML Diagram Generator (UNCHANGED) ---------
 def load_uml_data(file_paths):
     """Load UML data from multiple Excel files"""
     global uml_data
     uml_data.clear()
     all_classes = set()
-    
+
     try:
         for file_path in file_paths:
             if not os.path.exists(file_path):
                 continue
-                
+
             df = pd.read_excel(file_path, sheet_name=None, engine='openpyxl')
-            
+
             for sheet in df:
                 data = df[sheet]
                 if data.shape[1] < 31:
                     continue
-                    
+
                 data = data.rename(columns={
                     data.columns[1]: "MOC_Name",
                     data.columns[2]: "Parameter_Name",
@@ -135,9 +156,9 @@ def load_uml_data(file_paths):
                     data.columns[29]: "MinOccurs",
                     data.columns[30]: "MaxOccurs"
                 })
-                
+
                 data = data.dropna(subset=["MOC_Name", "Parameter_Name"], how='all')
-                
+
                 for _, row in data.iterrows():
                     class_name = str(row["MOC_Name"]).strip()
                     param_name = str(row["Parameter_Name"]).strip()
@@ -145,20 +166,18 @@ def load_uml_data(file_paths):
                     data_type = str(row["Data_Type"]).strip()
                     mod_status = str(row["Modification"]).strip().lower()
                     required = str(row["Required_On_Creation"]).strip().lower()
-                    # Use column AB (index 27) for required status
                     required_col_ab = str(row["Required_On_Creation_Col_AB"]).strip().lower() if pd.notna(row["Required_On_Creation_Col_AB"]) else required
                     parent = str(row["Parent_Parameter"]).strip() if pd.notna(row["Parent_Parameter"]) else None
                     min_occurs = str(row["MinOccurs"]).strip() if pd.notna(row["MinOccurs"]) else ""
                     max_occurs = str(row["MaxOccurs"]).strip() if pd.notna(row["MaxOccurs"]) else ""
-                    
-                    # Skip invalid entries
-                    if (param_name.lower() == "parameter name" or 
-                        class_name.lower() in ['nan', 'none', ''] or 
+
+                    if (param_name.lower() == "parameter name" or
+                        class_name.lower() in ['nan', 'none', ''] or
                         param_name.lower() in ['nan', 'none', ''] or
                         not class_name or not param_name or
                         class_name == 'nan' or param_name == 'nan'):
                         continue
-                        
+
                     if "bts" in mod_status:
                         color = "red"
                     elif "on-line" in mod_status:
@@ -167,8 +186,7 @@ def load_uml_data(file_paths):
                         color = "gray"
                     else:
                         color = "gray"
-                    
-                    # Use column AB for mandatory/optional/system set
+
                     if "mandatory" in required_col_ab:
                         mand = "(M)"
                     elif "optional" in required_col_ab:
@@ -177,23 +195,22 @@ def load_uml_data(file_paths):
                         mand = "(S)"
                     else:
                         mand = ""
-                    
+
                     uml_data[class_name]["attributes"].append({
-                        "name": abbreviation,  # Use abbreviation instead of parameter name
+                        "name": abbreviation,
                         "type": data_type,
                         "mandatory": mand,
                         "color": color,
                         "parent": parent
                     })
-                    
+
                     if "/" in class_name:
                         parts = class_name.split("/")
                         for i in range(1, len(parts)):
                             parent_class = "/".join(parts[:i])
-                            child_class = "/".join(parts[:i+1])
+                            child_class = "/".join(parts[:i + 1])
                             uml_data[parent_class]["relationships"].add(child_class)
-                            
-                            # Store multiplicity for this relationship
+
                             multiplicity = ""
                             if min_occurs and min_occurs.lower() != 'nan' and max_occurs and max_occurs.lower() != 'nan':
                                 multiplicity = f"{min_occurs}..{max_occurs}"
@@ -201,23 +218,25 @@ def load_uml_data(file_paths):
                                 multiplicity = f"{min_occurs}..*"
                             elif max_occurs and max_occurs.lower() != 'nan':
                                 multiplicity = f"0..{max_occurs}"
-                            
+
                             if multiplicity:
-                                if child_class not in uml_data[parent_class]["multiplicities"]:
-                                    uml_data[parent_class]["multiplicities"][child_class] = multiplicity
-                            
+                                uml_data[parent_class]["multiplicities"][child_class] = multiplicity
+
                     all_classes.add(class_name)
-        
+
         return sorted(all_classes)
     except Exception as e:
         print(f"Error loading UML data: {e}")
         return []
 
+
+# ----------------- Routes: Parameter UI -----------------
 @app.route('/parameter.html')
 def parameter_page():
     if 'uploaded_files' not in session or not session['uploaded_files']:
         return redirect(url_for('landing_page'))
     return render_template('parameter.html')
+
 
 @app.route('/get-parameters')
 def get_parameters():
@@ -231,62 +250,101 @@ def get_parameters():
     except Exception as e:
         return jsonify({"error": str(e), "parameters": []}), 500
 
+
 @app.route('/get-relation', methods=['POST'])
 def get_relation():
-    """NEW LOGIC - Returns direct and indirect relations with 4-level traversal"""
+    """
+    dependency = parameters that the input depends on  (reverse)
+    dependent  = parameters depending on the input     (forward)
+    indirect   = union of both
+    NOTE: input may be Abbreviation; we resolve to Parameter Name internally.
+    Output is converted back to Abbreviations when available.
+    """
     try:
         data = request.get_json()
-        param = data.get("parameter", "").strip()
-        if not param:
+        user_param = data.get("parameter", "").strip()
+        dependency_depth = int(data.get("dependency_depth", 1))
+        dependent_depth = int(data.get("dependent_depth", 1))
+
+        if not user_param:
             return jsonify({"error": "No parameter provided"}), 400
 
         file_paths = session.get('uploaded_files', [])
         if not file_paths:
             return jsonify({"error": "No Excel files uploaded"}), 400
 
-        direct_relations = set()
-        all_indirect = set()
+        # Resolve user input: abbrev -> real Parameter Name
+        param = abbrev_to_param.get(user_param, user_param)
+
+        dependency_names = set()
+        dependent_names = set()
+
+        def is_valid(p):
+            return p and str(p).strip().lower() not in ["", "nan", "none", "null", "undefined"]
 
         for excel_path in file_paths:
-            # Read with automatic header detection (first row as header)
             df = pd.read_excel(excel_path, engine="openpyxl")
             if df.shape[1] < 16:
                 continue
 
-            # Use column D (index 3) and column P (index 15)
-            col_d, col_p = df.columns[3], df.columns[15]
-            
-            # Find direct relations for the parameter
-            direct_relations.update([
-                r.strip()
-                for rel in df.loc[df[col_d].astype(str).str.strip() == param, col_p].dropna().tolist()
-                for r in str(rel).split(";") if r and r.strip() and r.strip().lower() != 'nan'
-            ])
+            col_param = df.columns[2]   # Column D (Parameter Name)
+            col_rel = df.columns[15]    # Column P (Related semicolon list)
 
-            # Find indirect relations (4-level deep traversal)
-            visited = set([param])
-            level_relations = set([param])
-
-            for _ in range(4):
-                new_relations = set()
-                for current in level_relations:
-                    matches = df[df[col_p].astype(str).str.contains(current, na=False)][col_d].dropna().tolist()
-                    for rel in matches:
-                        for r in str(rel).split(";"):
+            # 1) Dependency (reverse): rows where P contains <param>, collect D
+            visited = {param}
+            level = {param}
+            for _ in range(dependency_depth):
+                nxt = set()
+                for p in level:
+                    matches = df[df[col_rel].astype(str).str.contains(p, na=False, regex=False)][col_param]
+                    for item in matches:
+                        for r in str(item).split(";"):
                             r = r.strip()
-                            if r and r.lower() != 'nan' and r not in visited:
-                                new_relations.add(r)
-                if not new_relations:
+                            if is_valid(r) and r not in visited and r != param:
+                                dependency_names.add(r)
+                                nxt.add(r)
+                                visited.add(r)
+                if not nxt:
                     break
-                visited.update(new_relations)
-                all_indirect.update(new_relations)
-                level_relations = new_relations
-        return jsonify({"direct": sorted(direct_relations), "indirect": sorted(all_indirect - {param})})
+                level = nxt
+
+            # 2) Dependent (forward): rows where D == <param>, collect P (split)
+            visited = {param}
+            level = {param}
+            for _ in range(dependent_depth):
+                nxt = set()
+                for p in level:
+                    matches = df[df[col_param].astype(str).str.strip() == p][col_rel]
+                    for item in matches:
+                        for r in str(item).split(";"):
+                            r = r.strip()
+                            if is_valid(r) and r not in visited and r != param:
+                                dependent_names.add(r)
+                                nxt.add(r)
+                                visited.add(r)
+                if not nxt:
+                    break
+                level = nxt
+
+        # Map names -> abbreviations where available
+        def to_abbrev(name_set):
+            out = []
+            for n in sorted(name_set):
+                out.append(param_to_abbrev.get(n, n))
+            return out
+
+        indirect_names = (dependency_names | dependent_names) - {param}
+        return jsonify({
+            "dependency": to_abbrev(dependency_names),
+            "dependent": to_abbrev(dependent_names),
+            "indirect": to_abbrev(indirect_names)
+        })
+
     except Exception as e:
         import traceback
-        print(f"Error in get_relation: {e}")
         print(traceback.format_exc())
         return jsonify({"error": str(e)}), 500
+
 
 @app.route('/reload-data', methods=['POST'])
 def reload_data():
@@ -294,14 +352,15 @@ def reload_data():
         file_paths = session.get('uploaded_files', [])
         if not file_paths:
             return jsonify({"success": False, "error": "No files uploaded"}), 400
-        
+
         load_excel_data(file_paths)
         return jsonify({
             "success": True,
-            "message": f"Data reloaded. Found {len(parameters_list)} parameters."
+            "message": f"Data reloaded. Found {len(parameters_list)} abbreviations."
         })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
 
 @app.route('/test-data')
 def test_data():
@@ -313,12 +372,14 @@ def test_data():
         "uploaded_files": file_paths
     })
 
-# --------- UML Diagram Generator (UPDATED WITH MULTIPLICITY) ---------
+
+# ----------------- UML UI -----------------
 @app.route('/umldiagram.html')
 def uml_ui():
     if 'uploaded_files' not in session or not session['uploaded_files']:
         return redirect(url_for('landing_page'))
     return render_template('umldiagram.html')
+
 
 @app.route('/upload-main', methods=['POST'])
 def upload_main():
@@ -327,17 +388,15 @@ def upload_main():
         uploaded_files = request.files.getlist("excel_files")
         diagram_type = request.form.get('diagram_type', 'uml')
         available_files = request.form.getlist('available_files')
-        
+
         if not uploaded_files and not available_files:
             return jsonify({"success": False, "error": "No files selected"}), 400
 
-        session_id = session.get('session_id')
-        if not session_id:
+        if 'session_id' not in session:
             import uuid
-            session_id = str(uuid.uuid4())
-            session['session_id'] = session_id
-            
-        session_dir = os.path.join(app.config['TEMP_FOLDER'], session_id)
+            session['session_id'] = str(uuid.uuid4())
+
+        session_dir = os.path.join(app.config['TEMP_FOLDER'], session['session_id'])
         os.makedirs(session_dir, exist_ok=True)
         file_paths = []
 
@@ -370,15 +429,16 @@ def upload_main():
 
         # Load data based on diagram type
         if diagram_type == 'uml':
-            classes = load_uml_data(file_paths)
+            load_uml_data(file_paths)
             load_excel_data(file_paths)  # Also load parameter data with ALL files
             return jsonify({"success": True, "redirect": url_for('uml_ui')})
         else:
-            load_excel_data(file_paths)  # Load ALL files for parameters
+            load_excel_data(file_paths)
             return jsonify({"success": True, "redirect": url_for('parameter_page')})
-            
+
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
+
 
 @app.route('/select-available-files', methods=['POST'])
 def select_available_files():
@@ -391,13 +451,11 @@ def select_available_files():
         if not selected_filenames:
             return jsonify({"success": False, "error": "No files selected"}), 400
 
-        session_id = session.get('session_id')
-        if not session_id:
+        if 'session_id' not in session:
             import uuid
-            session_id = str(uuid.uuid4())
-            session['session_id'] = session_id
-            
-        session_dir = os.path.join(app.config['TEMP_FOLDER'], session_id)
+            session['session_id'] = str(uuid.uuid4())
+
+        session_dir = os.path.join(app.config['TEMP_FOLDER'], session['session_id'])
         os.makedirs(session_dir, exist_ok=True)
         file_paths = []
 
@@ -417,37 +475,38 @@ def select_available_files():
         session['uploaded_files'] = file_paths
         session['diagram_type'] = diagram_type
 
-        # Load data based on diagram type
         if diagram_type == 'uml':
-            classes = load_uml_data(file_paths)
-            load_excel_data(file_paths)  # Also load parameter data with ALL files
+            load_uml_data(file_paths)
+            load_excel_data(file_paths)
             return jsonify({
                 "success": True,
-                "message": f"Files loaded successfully. Found {len(classes)} classes.",
+                "message": "Files loaded successfully.",
                 "redirect": "/umldiagram.html"
             })
         else:
-            load_excel_data(file_paths)  # Load ALL files for parameters
+            load_excel_data(file_paths)
             return jsonify({
                 "success": True,
-                "message": f"Files loaded successfully. Found {len(parameters_list)} parameters.",
+                "message": f"Files loaded successfully. Found {len(parameters_list)} abbreviations.",
                 "redirect": "/parameter.html"
             })
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
+
+# ----------------- Uploads to /uploads -----------------
 @app.route('/upload-to-folder', methods=['POST'])
 def upload_to_folder():
     """Handle file uploads to the uploads folder from the plus button"""
     try:
         uploaded_files = request.files.getlist("files")
-        
+
         if not uploaded_files:
             return jsonify({"success": False, "error": "No files uploaded"}), 400
-        
+
         upload_folder = app.config['UPLOAD_FOLDER']
         os.makedirs(upload_folder, exist_ok=True)
-        
+
         uploaded_count = 0
         for file in uploaded_files:
             if file and file.filename.endswith(('.xlsx', '.xls', '.xlsm')):
@@ -455,10 +514,10 @@ def upload_to_folder():
                 file_path = os.path.join(upload_folder, filename)
                 file.save(file_path)
                 uploaded_count += 1
-        
+
         if uploaded_count == 0:
             return jsonify({"success": False, "error": "No valid Excel files found"}), 400
-        
+
         return jsonify({
             "success": True,
             "message": f"{uploaded_count} file(s) uploaded successfully"
@@ -466,6 +525,7 @@ def upload_to_folder():
     except Exception as e:
         print(f"Error uploading files: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
+
 
 @app.route('/delete-all-files', methods=['DELETE'])
 def delete_all_files():
@@ -490,62 +550,53 @@ def delete_all_files():
         print(f"Error deleting all files: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
 
-@app.route('/upload', methods=['POST'])
+
+# ----------------- UML class loading for UI -----------------
 @app.route('/upload', methods=['POST'])
 def upload_file():
     """Handle UML diagram generation using session files"""
     global uml_data
-    
+
     file_paths = session.get('uploaded_files', [])
     if not file_paths:
         return jsonify({
             "success": False,
             "error": "No files found in session. Please upload files from the main page."
         }), 400
-    
+
     # If UML data not already loaded, load it
     if not uml_data:
         classes = load_uml_data(file_paths)
-        # Create a list of class objects with full path and display name
         classes_data = [{"value": cls, "label": cls.split("/")[-1]} for cls in classes]
-        # Add "All Classes" option at the beginning
         classes_with_all = [{"value": "All Classes", "label": "All Classes"}] + classes_data
-        return jsonify({
-            "success": True,
-            "classes": classes_with_all
-        })
+        return jsonify({"success": True, "classes": classes_with_all})
+
     else:
         all_classes = sorted(uml_data.keys())
-        # Create a list of class objects with full path and display name
         classes_data = [{"value": cls, "label": cls.split("/")[-1]} for cls in all_classes]
-        # Add "All Classes" option at the beginning
         classes_with_all = [{"value": "All Classes", "label": "All Classes"}] + classes_data
-        return jsonify({
-            "success": True,
-            "classes": classes_with_all
-        })
+        return jsonify({"success": True, "classes": classes_with_all})
 
+
+# ----------------- UML Diagram Generation -----------------
 @app.route('/uml', methods=['POST'])
 def generate_uml():
     data = request.get_json()
     selected_class = data.get("parameter")
     depth = int(data.get("depth", 1))
-    
+
     if not selected_class:
         return jsonify({"uml": "graph TD\n%% No class selected", "class_count": 0})
 
-    # Handle "All Classes" selection
     if selected_class == "All Classes":
         return generate_all_classes_uml()
-    
+
     if selected_class not in uml_data:
         return jsonify({"uml": "graph TD\n%% Invalid class selected", "class_count": 0})
 
     visited = set()
     result_classes = {}
     queue = deque()
-    
-    # Start from the selected class (leaf)
     queue.append((selected_class, 0))
 
     while queue:
@@ -564,13 +615,9 @@ def generate_uml():
 
     for cls, info in result_classes.items():
         safe_cls = create_safe_node_id(cls)
-        
-        # Extract only the leaf class name for display
-        display_name = cls.split("/")[-1] if "/" in cls else cls
-        display_name = sanitize_for_mermaid(display_name)
-        
+        display_name = sanitize_for_mermaid(cls.split("/")[-1])
         label_lines = [f"<b>{display_name}</b>", "<hr>"]
-        
+
         attributes = info["attributes"]
         visible_attrs = attributes[:MAX_VISIBLE_ATTRIBUTES]
         hidden_count = len(attributes) - MAX_VISIBLE_ATTRIBUTES
@@ -579,21 +626,14 @@ def generate_uml():
             attr_name = sanitize_for_mermaid(attr['name'])
             attr_type = sanitize_for_mermaid(attr['type'])
             attr_mand = sanitize_for_mermaid(attr['mandatory'])
-            
-            # Skip attributes with empty names
             if not attr_name or attr_name == 'nan':
                 continue
-                
-            label = f"<span style='color:{attr['color']}'>+ {attr_name} : {attr_type} {attr_mand}</span>"
-            label_lines.append(label)
-        
-        # Add "View More" indicator if there are hidden attributes
+            label_lines.append(f"<span style='color:{attr['color']}'>+ {attr_name} : {attr_type} {attr_mand}</span>")
+
         if hidden_count > 0:
             label_lines.append(f"<span style='color:#3b82f6;font-weight:600;font-style:italic'>... +{hidden_count} more attributes</span>")
 
-        html_label = "<br>".join(label_lines)
-        # Use #quot; instead of quotes in the label
-        html_label = html_label.replace('"', '#quot;')
+        html_label = "<br>".join(label_lines).replace('"', '#quot;')
         lines.append(f'{safe_cls}["{html_label}"]')
 
     for cls, info in result_classes.items():
@@ -601,7 +641,6 @@ def generate_uml():
         for rel in info["relationships"]:
             if rel in result_classes:
                 to_cls = create_safe_node_id(rel)
-                # Add multiplicity if available
                 multiplicity = info["multiplicities"].get(rel, "")
                 if multiplicity:
                     multiplicity = sanitize_for_mermaid(multiplicity)
@@ -609,29 +648,20 @@ def generate_uml():
                 else:
                     lines.append(f"{from_cls} --> {to_cls}")
 
-    # Return class count along with UML
-    return jsonify({
-        "uml": "\n".join(lines),
-        "class_count": len(result_classes)
-    })
+    return jsonify({"uml": "\n".join(lines), "class_count": len(result_classes)})
+
 
 def generate_all_classes_uml():
-    """Generate UML diagram for all classes - showing only leaf names"""
     if not uml_data:
         return jsonify({"uml": "graph TD\n%% No classes available", "class_count": 0})
 
     lines = ["graph TD"]
 
-    # Add all classes with their attributes
     for cls, info in uml_data.items():
         safe_cls = create_safe_node_id(cls)
-        
-        # Extract only the leaf class name for display
-        display_name = cls.split("/")[-1] if "/" in cls else cls
-        display_name = sanitize_for_mermaid(display_name)
-        
+        display_name = sanitize_for_mermaid(cls.split("/")[-1])
         label_lines = [f"<b>{display_name}</b>", "<hr>"]
-        
+
         attributes = info["attributes"]
         visible_attrs = attributes[:MAX_VISIBLE_ATTRIBUTES]
         hidden_count = len(attributes) - MAX_VISIBLE_ATTRIBUTES
@@ -640,30 +670,21 @@ def generate_all_classes_uml():
             attr_name = sanitize_for_mermaid(attr['name'])
             attr_type = sanitize_for_mermaid(attr['type'])
             attr_mand = sanitize_for_mermaid(attr['mandatory'])
-            
-            # Skip attributes with empty names
             if not attr_name or attr_name == 'nan':
                 continue
-                
-            label = f"<span style='color:{attr['color']}'>+ {attr_name} : {attr_type} {attr_mand}</span>"
-            label_lines.append(label)
-        
-        # Add "View More" indicator if there are hidden attributes
+            label_lines.append(f"<span style='color:{attr['color']}'>+ {attr_name} : {attr_type} {attr_mand}</span>")
+
         if hidden_count > 0:
             label_lines.append(f"<span style='color:#3b82f6;font-weight:600;font-style:italic'>... +{hidden_count} more attributes</span>")
-            
-        html_label = "<br>".join(label_lines)
-        # Use #quot; instead of quotes in the label
-        html_label = html_label.replace('"', '#quot;')
+
+        html_label = "<br>".join(label_lines).replace('"', '#quot;')
         lines.append(f'{safe_cls}["{html_label}"]')
 
-    # Add all relationships with multiplicity
     for cls, info in uml_data.items():
         from_cls = create_safe_node_id(cls)
         for rel in info["relationships"]:
-            if rel in uml_data:  # Only add relationship if target class exists
+            if rel in uml_data:
                 to_cls = create_safe_node_id(rel)
-                # Add multiplicity if available
                 multiplicity = info["multiplicities"].get(rel, "")
                 if multiplicity:
                     multiplicity = sanitize_for_mermaid(multiplicity)
@@ -671,34 +692,34 @@ def generate_all_classes_uml():
                 else:
                     lines.append(f"{from_cls} --> {to_cls}")
 
-    # Return class count along with UML
-    return jsonify({
-        "uml": "\n".join(lines),
-        "class_count": len(uml_data)
-    })
+    return jsonify({"uml": "\n".join(lines), "class_count": len(uml_data)})
 
+
+# ----------------- Session / Home -----------------
 @app.route('/clear-session', methods=['POST'])
 def clear_session():
     try:
-        session_id = session.get('session_id')
-        if session_id:
-            session_dir = os.path.join(app.config['TEMP_FOLDER'], session_id)
-            if os.path.exists(session_dir):
-                shutil.rmtree(session_dir)
-                
+        if 'session_id' in session:
+            folder = os.path.join(app.config['TEMP_FOLDER'], session['session_id'])
+            if os.path.exists(folder):
+                shutil.rmtree(folder)
+
         session.clear()
-        global parameters_list, parameter_relations, uml_data
-        parameters_list = []
-        parameter_relations = {}
+        parameters_list.clear()
+        parameter_relations.clear()
         uml_data.clear()
+        abbrev_to_param.clear()
+        param_to_abbrev.clear()
+
         return jsonify({"success": True, "message": "Session cleared"})
     except Exception as e:
         return jsonify({"success": False, "error": str(e)}), 500
 
-# --------- Main Entry ---------
+
 @app.route('/')
 def landing_page():
     return render_template('main.html')
+
 
 @app.route('/get-available-files')
 def get_available_files():
@@ -707,7 +728,7 @@ def get_available_files():
         upload_folder = app.config['UPLOAD_FOLDER']
         if not os.path.exists(upload_folder):
             os.makedirs(upload_folder, exist_ok=True)
-            
+
         for filename in os.listdir(upload_folder):
             file_path = os.path.join(upload_folder, filename)
             if os.path.isfile(file_path) and filename.lower().endswith(('.xls', '.xlsx', '.xlsm')):
@@ -719,6 +740,7 @@ def get_available_files():
     except Exception as e:
         print(f"Error getting available files: {e}")
         return jsonify({"success": False, "files": [], "error": str(e)})
+
 
 if __name__ == '__main__':
     app.run(debug=True)

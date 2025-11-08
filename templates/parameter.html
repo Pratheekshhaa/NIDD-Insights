@@ -49,7 +49,6 @@
       font-size: 13px;
     }
 
-    /* Header */
     header {
       background: rgba(255, 255, 255, 0.95);
       backdrop-filter: blur(20px);
@@ -114,7 +113,6 @@
       background: rgba(59, 130, 246, 0.1);
     }
 
-    /* Main Layout */
     .main-container {
       max-width: 1400px;
       margin: 0 auto;
@@ -122,10 +120,8 @@
       display: grid;
       grid-template-columns: 400px 1fr;
       gap: 1.5rem;
-      height: calc(100vh - 120px);
     }
 
-    /* Left Panel - Controls */
     .control-panel {
       background: white;
       border-radius: 0.8rem;
@@ -159,7 +155,6 @@
       padding: 1.5rem;
     }
 
-    /* Section Styling */
     .section {
       margin-bottom: 1.5rem;
       padding-bottom: 1rem;
@@ -168,7 +163,6 @@
 
     .section:last-child {
       border-bottom: none;
-      margin-bottom: 0;
     }
 
     .section-title {
@@ -181,7 +175,6 @@
       gap: 0.4rem;
     }
 
-    /* Form Elements */
     .form-group {
       margin-bottom: 1rem;
     }
@@ -198,8 +191,7 @@
       font-size: 0.75rem;
     }
 
-    input,
-    select {
+    input {
       width: 100%;
       padding: 0.6rem 0.8rem;
       border: 2px solid var(--border-color);
@@ -209,21 +201,19 @@
       background: white;
     }
 
-    input:focus,
-    select:focus {
+    input:focus {
       outline: none;
       border-color: var(--accent-color);
       box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
     }
 
-    /* Status Messages */
     .status-message {
       padding: 0.8rem;
       border-radius: 0.5rem;
       font-size: 0.75rem;
       font-weight: 500;
       display: none;
-      margin-bottom: 1rem;
+      margin-top: 1rem;
     }
 
     .status-success {
@@ -244,13 +234,6 @@
       color: var(--accent-color);
     }
 
-    /* Buttons */
-    .btn-group {
-      display: flex;
-      flex-direction: column;
-      gap: 0.6rem;
-    }
-
     button {
       width: 100%;
       padding: 0.7rem 1rem;
@@ -264,25 +247,7 @@
       align-items: center;
       justify-content: center;
       gap: 0.4rem;
-    }
-
-    .btn-primary {
       background: var(--primary-gradient);
-      color: white;
-    }
-
-    .btn-secondary {
-      background: var(--accent-color);
-      color: white;
-    }
-
-    .btn-success {
-      background: var(--success-color);
-      color: white;
-    }
-
-    .btn-warning {
-      background: var(--warning-color);
       color: white;
     }
 
@@ -297,14 +262,13 @@
       transform: none;
     }
 
-    /* Loading */
     .loading {
       display: none;
       text-align: center;
       padding: 1rem;
       background: rgba(59, 130, 246, 0.05);
       border-radius: 0.5rem;
-      margin-bottom: 1rem;
+      margin-top: 1rem;
     }
 
     .spinner {
@@ -333,7 +297,6 @@
       font-size: 0.75rem;
     }
 
-    /* Right Panel - Relations Display */
     .relations-panel {
       background: white;
       border-radius: 0.8rem;
@@ -342,103 +305,71 @@
       overflow: hidden;
       display: flex;
       flex-direction: column;
-      height: fit-content;
-      max-height: calc(100vh - 60px);
     }
 
     .relations-header {
       background: var(--secondary-gradient);
       padding: 0.8rem 1.2rem;
       border-bottom: 1px solid var(--border-color);
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
     }
 
     .relations-header h3 {
       font-size: 0.9rem;
       font-weight: 600;
       color: var(--text-primary);
-      display: flex;
-      align-items: center;
-      gap: 0.4rem;
     }
 
     .relations-content {
       flex: 1;
       padding: 1.5rem;
       overflow: auto;
+    }
+
+    .relations-columns {
       display: flex;
-      align-items: flex-start;
-      justify-content: flex-start;
-      min-height: 400px;
-    }
-
-    .relations-placeholder {
-      text-align: center;
-      color: var(--text-secondary);
-      padding: 2rem;
+      gap: 1rem;
       width: 100%;
-      align-self: center;
     }
 
-    .relations-placeholder i {
-      font-size: 2rem;
-      margin-bottom: 1rem;
-      opacity: 0.5;
+    .relations-column {
+      flex: 1;
+      background: white;
+      border: 1px solid var(--border-color);
+      border-radius: 0.5rem;
+      padding: 0.8rem;
+      overflow-y: auto;
     }
 
-    .relations-placeholder h4 {
-      font-size: 1rem;
-      font-weight: 600;
-      margin-bottom: 0.5rem;
+    .relations-column h4 {
+      font-size: 0.85rem;
+      font-weight: 700;
+      margin-bottom: 0.6rem;
       color: var(--text-primary);
     }
 
-    .relations-placeholder p {
-      font-size: 0.8rem;
-      line-height: 1.4;
-    }
-
-    #relation-display {
-      width: 100%;
-      min-height: 100%;
-    }
-
-    /* Relations List Styling */
-    .relations-list {
-      width: 100%;
-    }
-
-    .relations-list ol {
+    .relations-column ol {
       padding-left: 1.5rem;
       margin: 0;
       font-size: 0.85rem;
       line-height: 1.6;
     }
 
-    .relations-list li {
+    .relations-column li {
       padding: 0.4rem 0;
       border-bottom: 1px solid rgba(226, 232, 240, 0.5);
       color: var(--text-primary);
     }
 
-    .relations-list li:last-child {
+    .relations-column li:last-child {
       border-bottom: none;
-    }
-
-    .relations-list li:hover {
-      background: rgba(59, 130, 246, 0.05);
-      margin: 0 -0.5rem;
-      padding: 0.4rem 0.5rem;
-      border-radius: 0.3rem;
     }
 
     .no-relations {
       text-align: center;
       color: var(--text-secondary);
+      padding: 1rem;
       font-style: italic;
-      padding: 2rem;
+      font-size: 0.8rem;
     }
 
     .error-message {
@@ -451,7 +382,6 @@
       font-size: 0.8rem;
     }
 
-    /* Awesomplete styling */
     .awesomplete {
       width: 100%;
     }
@@ -460,7 +390,7 @@
       border-radius: 0.5rem;
       border: 1px solid var(--border-color);
       box-shadow: var(--shadow-lg);
-      max-height: 150px;
+      max-height: 200px;
       overflow-y: auto;
     }
 
@@ -469,51 +399,16 @@
       color: var(--accent-color);
     }
 
-    /* Responsive Design */
-    @media (max-width: 1200px) {
-      .main-container {
-        grid-template-columns: 350px 1fr;
-        gap: 1rem;
-      }
-    }
-
     @media (max-width: 1024px) {
       .main-container {
         grid-template-columns: 1fr;
-        grid-template-rows: auto 1fr;
-        height: auto;
       }
 
-      .control-panel {
-        max-height: none;
-        height: auto;
-      }
-
-      .relations-content {
-        min-height: 500px;
+      .relations-columns {
+        flex-direction: column;
       }
     }
 
-    @media (max-width: 768px) {
-      .nav-links {
-        display: none;
-      }
-
-      .main-container {
-        padding: 1rem;
-        gap: 1rem;
-      }
-
-      .panel-body {
-        padding: 1rem;
-      }
-
-      .relations-content {
-        padding: 1rem;
-      }
-    }
-
-    /* Animations */
     .fade-in {
       animation: fadeIn 0.6s ease-out;
     }
@@ -533,8 +428,6 @@
 </head>
 
 <body>
-
-  <!-- Header -->
   <header>
     <nav>
       <div class="logo">
@@ -543,15 +436,11 @@
       </div>
       <ul class="nav-links">
         <li><a href="/"><i class="fas fa-home"></i> Home</a></li>
-        <li><a href="#docs"><i class="fas fa-book"></i> Docs</a></li>
-        <li><a href="#about"><i class="fas fa-info-circle"></i> About</a></li>
       </ul>
     </nav>
   </header>
 
-  <!-- Main Container -->
   <div class="main-container">
-    <!-- Left Panel - Control Panel -->
     <div class="control-panel fade-in">
       <div class="panel-header">
         <h2>Parameter Configuration</h2>
@@ -559,59 +448,49 @@
       </div>
 
       <div class="panel-body">
-        <!-- Parameter Selection -->
         <div class="section">
           <div class="section-title">
-            <i class="fas fa-search"></i>
-            Parameter Selection
+            <i class="fas fa-search"></i> Parameter Selection
           </div>
 
           <div class="form-group">
-            <label for="parameter-input">Select Parameter:</label>
-            <input id="parameter-input" class="awesomplete" type="text" placeholder="Start typing parameter name..."
-              autocomplete="off" />
+            <label for="parameter-input">Select Parameter</label>
+            <input id="parameter-input" class="awesomplete" placeholder="Start typing..." autocomplete="off" />
           </div>
 
-          <!-- Status Messages -->
-          <div class="status-message" id="status-message"></div>
+          <div class="form-group">
+            <label for="dependency-depth">Dependency Depth</label>
+            <input id="dependency-depth" type="number" min="1" value="1" />
+          </div>
 
-          <!-- Loading -->
+          <div class="form-group">
+            <label for="dependent-depth">Dependent Depth</label>
+            <input id="dependent-depth" type="number" min="1" value="1" />
+          </div>
+
+          <div class="status-message" id="status-message"></div>
           <div class="loading" id="loading">
             <div class="spinner"></div>
-            <p>Loading parameters...</p>
+            <p>Loading...</p>
           </div>
         </div>
 
-        <!-- Action Buttons -->
-        <div class="section">
-          <div class="section-title">
-            <i class="fas fa-tools"></i>
-            Actions
-          </div>
-
-          <div class="btn-group">
-            <button id="fetch-relation" class="btn-primary">
-              <i class="fas fa-network-wired"></i>
-              Show Related Parameters
-            </button>
-          </div>
-
-        </div>
+        <button id="fetch-relation">
+          <i class="fas fa-network-wired"></i>
+          Show Related Parameters
+        </button>
       </div>
     </div>
 
-    <!-- Right Panel - Relations Display -->
     <div class="relations-panel fade-in">
       <div class="relations-header">
-        <h3><i class="fas fa-network-wired"></i> Parameter Relations</h3>
+        <h3>Parameter Relations</h3>
       </div>
+
       <div class="relations-content">
         <div id="relation-display">
-          <div class="relations-placeholder">
-            <i class="fas fa-network-wired"></i>
-            <h4>No Relations Displayed</h4>
-            <p>Select a parameter from the left panel and click "Show Related Parameters" to view its relationships and
-              dependencies.</p>
+          <div class="no-relations">
+            <p>Select a parameter and click "Show Related Parameters"</p>
           </div>
         </div>
       </div>
@@ -619,21 +498,21 @@
   </div>
 
   <script>
-    // DOM Elements
-    const parameterInput = document.getElementById('parameter-input');
-    const fetchRelationBtn = document.getElementById('fetch-relation');
-    const statusMessage = document.getElementById('status-message');
-    const loading = document.getElementById('loading');
-    const relationDisplay = document.getElementById('relation-display');
+    const parameterInput = document.getElementById("parameter-input");
+    const fetchRelationBtn = document.getElementById("fetch-relation");
+    const dependencyDepthInput = document.getElementById("dependency-depth");
+    const dependentDepthInput = document.getElementById("dependent-depth");
+    const statusMessage = document.getElementById("status-message");
+    const loading = document.getElementById("loading");
+    const relationDisplay = document.getElementById("relation-display");
 
     let availableParameters = [];
-    let awesompleteInstance = null; // Store Awesomplete instance
+    let awesompleteInstance = null;
 
-    // Utility Functions
-    function showStatus(message, type = 'info') {
-      statusMessage.textContent = message;
+    function showStatus(msg, type) {
+      statusMessage.textContent = msg;
       statusMessage.className = `status-message status-${type}`;
-      statusMessage.style.display = 'block';
+      statusMessage.style.display = "block";
 
       if (type === 'success' || type === 'error') {
         setTimeout(() => {
@@ -642,180 +521,126 @@
       }
     }
 
-    function showLoading(show = true) {
-      loading.style.display = show ? 'block' : 'none';
+    function showLoading(active) {
+      loading.style.display = active ? "block" : "none";
     }
 
-    // Load parameters from server
-    async function loadParameters(preserveInput = true) {
-      const previousValue = preserveInput ? parameterInput.value.trim() : "";
-
+    async function loadParameters() {
       try {
         showLoading(true);
-        showStatus('Refreshing available parameters...', 'info');
 
-        const response = await fetch('/get-parameters');
+        const response = await fetch("/get-parameters");
         const data = await response.json();
 
-        if (data.parameters) {
-          availableParameters = data.parameters;
+        availableParameters = data.parameters || [];
 
-          // Initialize or update Awesomplete instance
-          if (!awesompleteInstance) {
-            awesompleteInstance = new Awesomplete(parameterInput, {
-              list: availableParameters,
-              minChars: 1,
-              autoFirst: true,
-              maxItems: 10
-            });
-          } else {
-            awesompleteInstance.list = availableParameters;
-          }
-
-          // Restore previous input if it still exists
-          if (previousValue && availableParameters.includes(previousValue)) {
-            parameterInput.value = previousValue;
-          }
-
-          showStatus(`Parameters refreshed (${availableParameters.length} found).`, 'success');
+        if (!awesompleteInstance) {
+          awesompleteInstance = new Awesomplete(parameterInput, {
+            list: availableParameters,
+            minChars: 1,
+            maxItems: 15,
+            autoFirst: true,
+          });
         } else {
-          availableParameters = [];
-          showStatus('No parameters found in the uploaded files.', 'error');
+          awesompleteInstance.list = availableParameters;
         }
-      } catch (error) {
-        availableParameters = [];
-        showStatus(`Error loading parameters: ${error.message}`, 'error');
-        console.error('Failed to load parameters', error);
+
+        showStatus(`Loaded ${availableParameters.length} parameters.`, "success");
+
+      } catch (e) {
+        showStatus(`Error loading parameters: ${e.message}`, "error");
       } finally {
         showLoading(false);
       }
     }
 
-    // Fetch parameter relations
+    function makeColumn(title, items) {
+      const col = document.createElement("div");
+      col.className = "relations-column";
+
+      const h = document.createElement("h4");
+      h.textContent = title;
+      col.appendChild(h);
+
+      if (!items || items.length === 0) {
+        const p = document.createElement("div");
+        p.className = "no-relations";
+        p.textContent = "No relations found";
+        col.appendChild(p);
+        return col;
+      }
+
+      const ol = document.createElement("ol");
+
+      items.forEach(item => {
+        const li = document.createElement("li");
+        li.textContent = item;
+        ol.appendChild(li);
+      });
+
+      col.appendChild(ol);
+      return col;
+    }
+
     async function fetchRelation(param) {
-      if (!param) {
-        showStatus('Please enter a parameter name.', 'error');
-        return;
-      }
-
-      if (!availableParameters.includes(param)) {
-        showStatus('Please select a valid parameter from the dropdown.', 'error');
-        return;
-      }
-
       try {
         showLoading(true);
-        showStatus('Fetching parameter relations...', 'info');
 
-        const response = await fetch('/get-relation', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ parameter: param })
+        const payload = {
+          parameter: param,
+          dependency_depth: Number(dependencyDepthInput.value),
+          dependent_depth: Number(dependentDepthInput.value),
+        };
+
+        const res = await fetch("/get-relation", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(payload),
         });
 
-        const data = await response.json();
-        relationDisplay.innerHTML = ""; // Clear previous content
+        const data = await res.json();
 
-        if (data.direct || data.indirect) {
-          const container = document.createElement("div");
-          container.className = "relations-list";
+        relationDisplay.innerHTML = "";
 
-          const title = document.createElement("h4");
-          title.textContent = `Relations for: ${param}`;
-          title.style.marginBottom = "1rem";
-          title.style.color = "var(--text-primary)";
-          title.style.fontSize = "0.9rem";
-          title.style.fontWeight = "600";
-          container.appendChild(title);
-
-          // Direct Relations
-          if (data.direct && data.direct.length > 0) {
-            const directTitle = document.createElement("h5");
-            directTitle.textContent = "Direct Relations";
-            directTitle.style.margin = "0.5rem 0";
-            directTitle.style.color = "var(--accent)";
-            container.appendChild(directTitle);
-
-            const ol = document.createElement("ol");
-            data.direct.forEach(rel => {
-              const li = document.createElement("li");
-              // Remove ::public suffix if present
-              li.textContent = rel.replace(/::public$/, '');
-              ol.appendChild(li);
-            });
-            container.appendChild(ol);
-          }
-
-          // Indirect Relations
-          if (data.indirect && data.indirect.length > 0) {
-            const indirectTitle = document.createElement("h5");
-            indirectTitle.textContent = "Indirect Relations";
-            indirectTitle.style.margin = "0.5rem 0";
-            indirectTitle.style.color = "var(--accent-secondary)";
-            container.appendChild(indirectTitle);
-
-            const ol = document.createElement("ol");
-            data.indirect.forEach(rel => {
-              const li = document.createElement("li");
-              li.textContent = rel;
-              ol.appendChild(li);
-            });
-            container.appendChild(ol);
-          }
-
-          relationDisplay.appendChild(container);
-          showStatus('Parameter relations loaded successfully!', 'success');
-        } else if (data.error) {
-          relationDisplay.innerHTML = `<div class="error-message">Error: ${data.error}</div>`;
-          showStatus(`Error: ${data.error}`, 'error');
-        } else {
-          relationDisplay.innerHTML = `<div class="no-relations">No relations found for parameter: ${param}</div>`;
-          showStatus('No relations found for the selected parameter.', 'info');
+        if (data.error) {
+          relationDisplay.innerHTML =
+            `<div class="error-message">${data.error}</div>`;
+          showStatus(data.error, "error");
+          return;
         }
-      } catch (error) {
-        relationDisplay.innerHTML = `<div class="error-message">Error fetching relation: ${error.message}</div>`;
-        showStatus(`Error fetching relations: ${error.message}`, 'error');
-        console.error('Error fetching relation:', error);
+
+        const columns = document.createElement("div");
+        columns.className = "relations-columns";
+
+        columns.appendChild(makeColumn("Dependency", data.dependency || []));
+        columns.appendChild(makeColumn("Dependent", data.dependent || []));
+        columns.appendChild(makeColumn("Indirect", data.indirect || []));
+
+        relationDisplay.appendChild(columns);
+        showStatus("Relations loaded successfully!", "success");
+
+      } catch (e) {
+        relationDisplay.innerHTML =
+          `<div class="error-message">Error: ${e.message}</div>`;
+        showStatus(`Error fetching relations: ${e.message}`, "error");
       } finally {
         showLoading(false);
       }
     }
 
-    // Event Listener for the button
-    fetchRelationBtn.addEventListener('click', async () => {
+    fetchRelationBtn.addEventListener("click", async () => {
       const param = parameterInput.value.trim();
 
-      if (!param) {
-        showStatus("Please enter/select a parameter.", "error");
-        return;
-      }
+      if (!param) return showStatus("Please enter a parameter.", "error");
 
-      // Refresh parameters first, preserving typed input
-      await loadParameters(true);
+      if (!availableParameters.includes(param))
+        return showStatus("Invalid parameter selected.", "error");
 
-      // Only fetch relation if parameter exists in updated list
-      if (availableParameters.includes(param)) {
-        fetchRelation(param);
-      } else {
-        showStatus("Please select a valid parameter from the dropdown.", "error");
-      }
+      fetchRelation(param);
     });
 
-    // Input listener
-    parameterInput.addEventListener('input', () => {
-      // No need to disable button anymore
-      // Just optional validation (can add styles if you want)
-    });
-
-    // Initialize on page load
-    document.addEventListener('DOMContentLoaded', async () => {
-      await loadParameters();
-    });
-
-
-  </script>
-
-
+    document.addEventListener("DOMContentLoaded", loadParameters);
+</script>
 </body>
 
 </html>
