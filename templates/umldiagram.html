@@ -129,6 +129,7 @@
       grid-template-columns: 400px 1fr;
       gap: 1.5rem;
       height: calc(100vh - 120px);
+      background-color: #f5f8fa;
     }
 
     /* Left Panel - Controls */
@@ -1091,46 +1092,118 @@ async function generateUML() {
 
 
 async function downloadDiagram() {
-  const diagramNode = document.querySelector('#uml-diagram .mermaid svg');
-  if (!diagramNode) return showStatus('No diagram to download.', 'error');
+  // 1. Define targets
+  const diagramSvg = document.querySelector('#uml-diagram .mermaid svg');
+  const legendPanelNode = document.getElementById('legend-panel');
 
-  const innerGroup = diagramNode.querySelector('g');
-  if (!innerGroup) return showStatus('Could not find diagram content (no <g> element).', 'error');
- 
+  if (!diagramSvg) return showStatus('No diagram SVG found.', 'error');
+  if (!legendPanelNode) return showStatus('Legend panel not found.', 'error');
+  
   if (typeof domtoimage === 'undefined') {
     return showStatus('Download library (dom-to-image) not found. Please refresh the page.', 'error');
   }
 
+  // 2. Create the main temporary container
+  const downloadContainer = document.createElement('div');
+  downloadContainer.id = 'temp-download-container';
+  
+  Object.assign(downloadContainer.style, {
+    
+    position: 'absolute',
+    left: '0px',
+    top: '0px',
+    zIndex: '-9999', // Place it behind everything
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: '24px',
+    padding: '24px',
+    backgroundColor: '#ffffff', 
+    border: '1px solid #e2e8f0',
+    borderRadius: '0.8rem',
+    opacity: '1',
+    visibility: 'visible'
+  });
+
+  // 3. Create the div that mimics <div id="uml-diagram">
+  const diagramWrapper = document.createElement('div');
+  diagramWrapper.id = 'uml-diagram'; // This forces your styles to apply!
+
+  // 4. Create the div that mimics <div class="mermaid">
+  const mermaidWrapper = document.createElement('div');
+  mermaidWrapper.className = 'mermaid';
+
+  // 5. Clone the SVG (so the original is never touched)
+  const diagramClone = diagramSvg.cloneNode(true);
+
+  // 6. Assemble the diagram part
+  mermaidWrapper.appendChild(diagramClone);
+  diagramWrapper.appendChild(mermaidWrapper);
+  
+  // 7. Clone and style the legend
+  const legendClone = legendPanelNode.cloneNode(true);
+  Object.assign(legendClone.style, {
+    position: 'relative',
+    top: 'auto',
+    right: 'auto',
+    marginTop: '0',
+    opacity: '1',
+    visibility: 'visible',
+    transform: 'none',
+    width: '200px',
+    minWidth: 'auto', // Override the original min-width
+    flexShrink: '0',
+    boxShadow: 'none'
+  });
+  const closeBtn = legendClone.querySelector('.legend-close');
+  if (closeBtn) closeBtn.style.display = 'none';
+
+  // 8. Assemble the final temporary container
+  downloadContainer.appendChild(diagramWrapper); // Add the styled diagram
+  downloadContainer.appendChild(legendClone);   // Add the legend
+  document.body.appendChild(downloadContainer);
+
+  // Give the browser a moment to render
+  await new Promise(resolve => setTimeout(resolve, 50));
+
+  // *** FIX FOR CLIPPING ***
+  // Store original body overflow-x style
+  const originalBodyOverflowX = document.body.style.overflowX;
+  
   try {
     showLoading(true);
     showStatus('Preparing download...', 'info');
 
-    const bbox = innerGroup.getBBox();
-    const scale = 2;
+    // 9. Setup high-res (anti-blur) options
+    const scale = 2; // Render at 2x resolution
+    const rect = downloadContainer.getBoundingClientRect();
+    
+    // *** FIX FOR CLIPPING ***
+    // Temporarily allow horizontal overflow. This stops the browser
+    // from clipping our zIndex:-1 container and DOES NOT cause a layout jump.
+    document.body.style.overflowX = 'visible';
 
     const options = {
       bgcolor: '#ffffff',
-      width: bbox.width * scale,
-      height: bbox.height * scale,
+      width: rect.width * scale,
+      height: rect.height * scale,
       style: {
-        width: `${bbox.width}px`,
-        height: `${bbox.height}px`,
-        maxWidth: 'none !important',
-        transform: `scale(${scale}) translate(${-bbox.x}px, ${-bbox.y}px)`,
-        transformOrigin: 'top left'
+        transform: `scale(${scale})`,
+        transformOrigin: 'top left',
+        width: `${rect.width}px`,
+        height: `${rect.height}px`
       }
     };
 
-    const pngDataUrl = await domtoimage.toPng(diagramNode, options);
+    // 10. Capture the container
+    const pngDataUrl = await domtoimage.toPng(downloadContainer, options);
 
     const link = document.createElement('a');
-    // Use the display label for filename
     const filename = parameterInput.value.replace(/[^a-zA-Z0-9]/g, '_');
-    link.download = `uml_diagram_${filename}.png`;
+    link.download = `uml_diagram_with_legend_${filename}_@${scale}x.png`;
     link.href = pngDataUrl;
     link.click();
 
-    showStatus('Diagram downloaded successfully!', 'success');
+    showStatus('High-res diagram downloaded!', 'success');
 
   } catch (error) {
     console.error("Download Error:", error);
@@ -1138,8 +1211,16 @@ async function downloadDiagram() {
     showStatus(`Error downloading diagram: ${errorMsg}`, 'error');
   } finally {
     showLoading(false);
+    
+    // *** FIX FOR CLIPPING ***
+    // Restore original body overflow-x style
+    document.body.style.overflowX = originalBodyOverflowX;
+    
+    // 11. Clean up
+    document.body.removeChild(downloadContainer);
   }
 }
+
 
 generateUmlBtn.addEventListener('click', generateUML);
 downloadImageBtn.addEventListener('click', downloadDiagram);
