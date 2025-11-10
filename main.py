@@ -645,22 +645,25 @@ def generate_uml():
     for cls, info in result_classes.items():
         safe_cls = create_safe_node_id(cls)
         display_name = sanitize_for_mermaid(cls.split("/")[-1])
-        label_lines = [f"<b>{display_name}</b>", "<hr>"]
+        
+        # Center-aligned class name
+        label_lines = [f"<div style='text-align:center;'><b>{display_name}</b></div>", "<hr>"]
 
         attributes = info["attributes"]
         visible_attrs = attributes[:MAX_VISIBLE_ATTRIBUTES]
         hidden_count = len(attributes) - MAX_VISIBLE_ATTRIBUTES
 
+        # Left-aligned attributes with padding
         for attr in visible_attrs:
             attr_name = sanitize_for_mermaid(attr['name'])
             attr_type = sanitize_for_mermaid(attr['type'])
             attr_mand = sanitize_for_mermaid(attr['mandatory'])
             if not attr_name or attr_name == 'nan':
                 continue
-            label_lines.append(f"<span style='color:{attr['color']}'>+ {attr_name} : {attr_type} {attr_mand}</span>")
+            label_lines.append(f"<div style='text-align:left;padding-left:8px;'><span style='color:{attr['color']}'>+ {attr_name} : {attr_type} {attr_mand}</span></div>")
 
         if hidden_count > 0:
-            label_lines.append(f"<span style='color:#3b82f6;font-weight:600;font-style:italic'>... +{hidden_count} more attributes</span>")
+            label_lines.append(f"<div style='text-align:left;padding-left:8px;'><span style='color:#3b82f6;font-weight:600;font-style:italic'>... +{hidden_count} more attributes</span></div>")
 
         html_label = "<br>".join(label_lines).replace('"', '#quot;')
         lines.append(f'{safe_cls}["{html_label}"]')
@@ -679,7 +682,6 @@ def generate_uml():
 
     return jsonify({"uml": "\n".join(lines), "class_count": len(result_classes)})
 
-
 def generate_all_classes_uml():
     if not uml_data:
         return jsonify({"uml": "graph TD\n%% No classes available", "class_count": 0})
@@ -689,22 +691,25 @@ def generate_all_classes_uml():
     for cls, info in uml_data.items():
         safe_cls = create_safe_node_id(cls)
         display_name = sanitize_for_mermaid(cls.split("/")[-1])
-        label_lines = [f"<b>{display_name}</b>", "<hr>"]
+        
+        # Center-aligned class name
+        label_lines = [f"<div style='text-align:center;'><b>{display_name}</b></div>", "<hr>"]
 
         attributes = info["attributes"]
         visible_attrs = attributes[:MAX_VISIBLE_ATTRIBUTES]
         hidden_count = len(attributes) - MAX_VISIBLE_ATTRIBUTES
 
+        # Left-aligned attributes with padding
         for attr in visible_attrs:
             attr_name = sanitize_for_mermaid(attr['name'])
             attr_type = sanitize_for_mermaid(attr['type'])
             attr_mand = sanitize_for_mermaid(attr['mandatory'])
             if not attr_name or attr_name == 'nan':
                 continue
-            label_lines.append(f"<span style='color:{attr['color']}'>+ {attr_name} : {attr_type} {attr_mand}</span>")
+            label_lines.append(f"<div style='text-align:left;padding-left:8px;'><span style='color:{attr['color']}'>+ {attr_name} : {attr_type} {attr_mand}</span></div>")
 
         if hidden_count > 0:
-            label_lines.append(f"<span style='color:#3b82f6;font-weight:600;font-style:italic'>... +{hidden_count} more attributes</span>")
+            label_lines.append(f"<div style='text-align:left;padding-left:8px;'><span style='color:#3b82f6;font-weight:600;font-style:italic'>... +{hidden_count} more attributes</span></div>")
 
         html_label = "<br>".join(label_lines).replace('"', '#quot;')
         lines.append(f'{safe_cls}["{html_label}"]')
