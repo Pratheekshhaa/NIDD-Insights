@@ -15,8 +15,9 @@ os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 os.makedirs(app.config['TEMP_FOLDER'], exist_ok=True)
 
 # ----------------- Globals -----------------
+# parameters_list now contains ABBREVIATIONS (what shows in dropdown)
 parameters_list = []  # used by dropdown: ONLY abbreviations
-parameter_relations = {}  # key: Parameter Name (col D), value: list of related (from col P)
+parameter_relations = {}  # key: ABBREVIATION (col D), value: list of related ABBREVIATIONS (from col P)
 uml_data = defaultdict(lambda: {
     "attributes": [],
     "relationships": set(),
@@ -24,8 +25,8 @@ uml_data = defaultdict(lambda: {
 })
 
 # NEW: mappings for Option A
-abbrev_to_param = {}   # abbrev -> Parameter Name
-param_to_abbrev = {}   # Parameter Name -> abbrev
+abbrev_to_param = {}   # abbrev -> Full Parameter Name (col C)
+param_to_abbrev = {}   # Full Parameter Name -> abbrev (col D)
 
 # Maximum attributes to show before "View More"
 MAX_VISIBLE_ATTRIBUTES = 10
@@ -45,9 +46,30 @@ def sanitize_for_mermaid(text):
 
 def create_safe_node_id(class_name):
     safe_id = re.sub(r'[^a-zA-Z0-9]', '_', class_name)
-    safe_id = re.sub(r'_+', '_', safe_id)
+    safe_id = re.sub(r'+', '', safe_id)
     safe_id = safe_id.strip('_')
     return safe_id if safe_id else 'node'
+
+
+def parse_related_cell(cell_value):
+    """
+    Parse a cell from Column P and return a list of abbreviations.
+    - Items separated by ';'
+    - Each item can be like 'ABBR::public' -> strip '::...' suffix
+    """
+    out = []
+    if pd.isna(cell_value):
+        return out
+    s = str(cell_value).strip()
+    if not s:
+        return out
+    parts = [p.strip() for p in s.split(';') if p.strip()]
+    for part in parts:
+        # remove ::anything suffix (e.g. ::public)
+        cleaned = re.sub(r'\s*::\s*.*$', '', part, flags=re.IGNORECASE).strip()
+        if cleaned:
+            out.append(cleaned)
+    return out
 
 
 # --------- Parameter Relation Finder ---------
@@ -55,7 +77,8 @@ def detect_header(df, search_columns):
     """Auto-detect header row by looking for keywords"""
     for i in range(min(10, len(df))):
         row = df.iloc[i].astype(str).str.lower()
-        if any(keyword in row[j] for keyword in search_columns for j in range(len(row))):
+        # if any search keyword appears anywhere in that row
+        if any(keyword.lower() in " ".join(row.values) for keyword in search_columns):
             return i
     return 0
 
@@ -63,66 +86,95 @@ def detect_header(df, search_columns):
 def load_excel_data(file_paths):
     """
     Load parameter data from multiple Excel files.
-    - Reads FULL Parameter Name column (Column D / index 3)
-    - No filtering (no 'id' keyword filtering)
-    - Stores ALL parameter names in dropdown list
-    - Column P (index 15) used for relations
+    - Column C (index 2) -> Full Parameter Name
+    - Column D (index 3) -> Abbreviation (used everywhere for relations)
+    - Column P (index 15) -> Related abbreviations list (semicolon-separated, may have ::public)
+    - parameters_list will contain abbreviations
+    - parameter_relations: abbrev -> list of related abbrevs
+    - also populate abbrev_to_param and param_to_abbrev
     """
-    global parameters_list, parameter_relations
-    try:
-        parameters_list = []
-        parameter_relations = {}
+    global parameters_list, parameter_relations, abbrev_to_param, param_to_abbrev
+    parameters_list = []
+    parameter_relations = {}
+    abbrev_to_param = {}
+    param_to_abbrev = {}
 
+    try:
         for file_path in file_paths:
-            df_sheets = pd.read_excel(file_path, sheet_name=None, engine='openpyxl', header=None)
+            # read all sheets, no header so we can detect header row manually
+            try:
+                df_sheets = pd.read_excel(file_path, sheet_name=None, engine='openpyxl', header=None)
+            except Exception:
+                # fallback to default read if any issue
+                df_sheets = pd.read_excel(file_path, sheet_name=None, engine='openpyxl')
 
             for sheet_name, df in df_sheets.items():
+                # skip tiny sheets
                 if df.shape[1] < 16:
                     continue
 
-                # Auto-detect header
-                header_row = detect_header(df, search_columns=["parameter", "relation"])
+                # detect header row heuristically
+                header_row = detect_header(df, search_columns=["Parameter", "Parameter Name", "Abbreviation", "Relation", "Related"])
                 df.columns = df.iloc[header_row]
                 df = df.iloc[header_row + 1:].reset_index(drop=True)
 
-                # Columns:
-                col_d = df.columns[2]      # ✅ FULL Parameter Names
-                col_p = df.columns[15]     # ✅ Relations
+                # Column indexes according to your request:
+                # C -> index 2, D -> index 3, P -> index 15
+                try:
+                    col_full = df.columns[2]   # Column C (Full Parameter Name)
+                    col_abbr = df.columns[3]   # Column D (Abbreviation)
+                    col_rel = df.columns[15]   # Column P (Related list)
+                except Exception:
+                    # If headers messed up, skip this sheet
+                    continue
 
-                # Drop only if Parameter Name column is empty entirely
-                df_clean = df.dropna(subset=[col_d], how='all')
+                df_clean = df.dropna(subset=[col_full], how='all')
 
                 for _, row in df_clean.iterrows():
-                    param_name = str(row[col_d]).strip() if pd.notna(row[col_d]) else ""
-                    related_params = str(row[col_p]).strip() if pd.notna(row[col_p]) else ""
+                    full_name = str(row[col_full]).strip() if pd.notna(row[col_full]) else ""
+                    abbrev = str(row[col_abbr]).strip() if pd.notna(row[col_abbr]) else ""
+                    related_cell = row[col_rel] if col_rel in df.columns else ""
 
-                    # ✅ Skip empty or "nan" names
-                    if not param_name or param_name.lower() == "nan":
+                    # If abbreviation is empty, fallback to a cleaned form of full_name
+                    if not abbrev or abbrev.lower() in ['nan', 'none']:
+                        abbrev = re.sub(r'\s+', '_', full_name).strip() if full_name else ""
+
+                    if not full_name:
+                        # skip rows without a full name
                         continue
 
-                    # ✅ Add ALL Parameter Names (no filtering)
-                    if param_name not in parameters_list:
-                        parameters_list.append(param_name)
-
-                    # ✅ Store relations
-                    if related_params and related_params.lower() != "nan":
-                        existing = parameter_relations.get(param_name, [])
-                        if isinstance(existing, str):
-                            existing = [] if existing == "No related parameters found" else [existing]
-
-                        new_rels = [r.strip() for r in related_params.split(";") if r.strip()]
-                        parameter_relations[param_name] = list(set(existing + new_rels))
-
+                    # register mappings
+                    if abbrev:
+                        abbrev_to_param[abbrev] = full_name
+                        # keep first abbreviation if multiple map to same full name; prefer abbrev
+                        if full_name not in param_to_abbrev:
+                            param_to_abbrev[full_name] = abbrev
                     else:
-                        if param_name not in parameter_relations:
-                            parameter_relations[param_name] = "No related parameters found"
+                        # no abbrev: still add mapping keyed by generated abbrev
+                        continue
 
-        # ✅ Sort dropdown alphabetically
-        parameters_list.sort()
+                    # add to dropdown list (unique)
+                    if abbrev and abbrev not in parameters_list:
+                        parameters_list.append(abbrev)
+
+                    # parse relations from Column P (convert to abbrev list)
+                    rels = parse_related_cell(related_cell)
+                    # sanitize and dedupe
+                    rels = [r for r in [x.strip() for x in rels] if r and r.lower() not in ['nan', 'none', '']]
+                    if rels:
+                        existing = parameter_relations.get(abbrev, [])
+                        combined = list(set(existing + rels))
+                        parameter_relations[abbrev] = combined
+                    else:
+                        # ensure the key exists with empty list rather than a string
+                        if abbrev not in parameter_relations:
+                            parameter_relations[abbrev] = []
+
+        # sort dropdown alphabetically and keep unique
+        parameters_list = sorted(list(set(parameters_list)))
 
     except Exception as e:
         print(f"Failed to load Excel: {e}")
-
 
 
 # --------- UML Diagram Generator (UNCHANGED) ---------
@@ -241,6 +293,7 @@ def parameter_page():
 @app.route('/get-parameters')
 def get_parameters():
     try:
+        # Return abbreviations (parameters_list)
         if not parameters_list:
             return jsonify({
                 "error": "No parameters loaded. Upload an Excel file first.",
@@ -254,17 +307,16 @@ def get_parameters():
 @app.route('/get-relation', methods=['POST'])
 def get_relation():
     """
-    dependency = parameters that the input depends on  (reverse)
-    dependent  = parameters depending on the input     (forward)
-    indirect   = union of both
-    NOTE: input may be Abbreviation; we resolve to Parameter Name internally.
-    Output is converted back to Abbreviations when available.
+    dependency (direct): Column D == param → extract abbrevs from Column P
+    dependent (recursive): cleaned P contains abbrev → get Column D
+    indirect (recursive): perform dependent search for each dependency result
     """
     try:
         data = request.get_json()
+
         user_param = data.get("parameter", "").strip()
-        dependency_depth = int(data.get("dependency_depth", 1))
         dependent_depth = int(data.get("dependent_depth", 1))
+        indirect_depth = int(data.get("indirect_depth", 1))
 
         if not user_param:
             return jsonify({"error": "No parameter provided"}), 400
@@ -273,76 +325,128 @@ def get_relation():
         if not file_paths:
             return jsonify({"error": "No Excel files uploaded"}), 400
 
-        # Resolve user input: abbrev -> real Parameter Name
-        param = abbrev_to_param.get(user_param, user_param)
+        # Abbreviation selected from UI (Column D)
+        param = user_param.strip()
 
-        dependency_names = set()
-        dependent_names = set()
+        dependency_set = set()
+        dependent_set = set()
+        indirect_set = set()
 
         def is_valid(p):
-            return p and str(p).strip().lower() not in ["", "nan", "none", "null", "undefined"]
+            return p and str(p).strip().lower() not in ["", "nan", "none"]
 
+        # ---------------- CLEANING RULE ----------------
+        def extract_abbrev(cell_value):
+            """
+            Column P contains:
+            MOC-L1-MO2-mocL1Mo2Usage::public
+            want → mocL1Mo2Usage
+            """
+            out = []
+            if pd.isna(cell_value):
+                return out
+
+            s = str(cell_value).strip()
+            if not s:
+                return out
+
+            parts = [p.strip() for p in s.split(";") if p.strip()]
+
+            for part in parts:
+                # remove ::suffix (public/private/etc)
+                part = re.sub(r"::.*$", "", part)
+
+                # pick LAST segment after '-'
+                if "-" in part:
+                    abbr = part.split("-")[-1].strip()
+                else:
+                    abbr = part.strip()
+
+                if abbr:
+                    out.append(abbr)
+
+            return out
+
+        # ---------------- PROCESS ALL FILES ----------------
         for excel_path in file_paths:
             df = pd.read_excel(excel_path, engine="openpyxl")
             if df.shape[1] < 16:
                 continue
 
-            col_param = df.columns[2]   # Column D (Parameter Name)
-            col_rel = df.columns[15]    # Column P (Related semicolon list)
+            # C = index 2  (Parameter Name)  [NOT USED]
+            # D = index 3  (Abbreviation)
+            # P = index 15 (Relations)
+            col_D = df.columns[3]
+            col_P = df.columns[15]
 
-            # 1) Dependency (reverse): rows where P contains <param>, collect D
+            # Clean P column
+            df["_P_clean"] = df[col_P].apply(extract_abbrev)
+
+            # -----------------------------
+            # 1️⃣ DEPENDENCY: Column D == param
+            # -----------------------------
+            direct_rows = df[df[col_D].astype(str).str.strip() == param][col_P]
+
+            for item in direct_rows:
+                for ab in extract_abbrev(item):
+                    dependency_set.add(ab)
+
+            # -----------------------------
+            # 2️⃣ DEPENDENT: recursive search
+            # -----------------------------
             visited = {param}
             level = {param}
-            for _ in range(dependency_depth):
-                nxt = set()
-                for p in level:
-                    matches = df[df[col_rel].astype(str).str.contains(p, na=False, regex=False)][col_param]
-                    for item in matches:
-                        for r in str(item).split(";"):
-                            r = r.strip()
-                            if is_valid(r) and r not in visited and r != param:
-                                dependency_names.add(r)
-                                nxt.add(r)
-                                visited.add(r)
-                if not nxt:
-                    break
-                level = nxt
 
-            # 2) Dependent (forward): rows where D == <param>, collect P (split)
-            visited = {param}
-            level = {param}
             for _ in range(dependent_depth):
                 nxt = set()
-                for p in level:
-                    matches = df[df[col_param].astype(str).str.strip() == p][col_rel]
-                    for item in matches:
-                        for r in str(item).split(";"):
-                            r = r.strip()
-                            if is_valid(r) and r not in visited and r != param:
-                                dependent_names.add(r)
-                                nxt.add(r)
-                                visited.add(r)
+                for ab in level:
+                    # rows where cleaned P contains ab
+                    rows = df[df["_P_clean"].apply(lambda arr: ab in arr)][col_D]
+
+                    for item in rows:
+                        cleaned = str(item).strip()
+                        if is_valid(cleaned) and cleaned not in visited:
+                            dependent_set.add(cleaned)
+                            nxt.add(cleaned)
+                            visited.add(cleaned)
+
                 if not nxt:
                     break
+
                 level = nxt
 
-        # Map names -> abbreviations where available
-        def to_abbrev(name_set):
-            out = []
-            for n in sorted(name_set):
-                out.append(param_to_abbrev.get(n, n))
-            return out
+            # -----------------------------
+            # 3️⃣ INDIRECT: recursion starting from dependency_set
+            # -----------------------------
+            for dep_abbrev in list(dependency_set):
 
-        indirect_names = (dependency_names | dependent_names) - {param}
+                visited = {dep_abbrev}
+                level = {dep_abbrev}
+
+                for _ in range(indirect_depth):
+                    nxt = set()
+                    for ab in level:
+                        rows = df[df["_P_clean"].apply(lambda arr: ab in arr)][col_D]
+
+                        for item in rows:
+                            cleaned = str(item).strip()
+                            if is_valid(cleaned) and cleaned not in visited:
+                                indirect_set.add(cleaned)
+                                nxt.add(cleaned)
+                                visited.add(cleaned)
+
+                    if not nxt:
+                        break
+                    level = nxt
+
+        # Return sorted results
         return jsonify({
-            "dependency": to_abbrev(dependency_names),
-            "dependent": to_abbrev(dependent_names),
-            "indirect": to_abbrev(indirect_names)
+            "dependency": sorted(dependency_set),
+            "dependent": sorted(dependent_set),
+            "indirect": sorted(indirect_set),
         })
 
     except Exception as e:
-        import traceback
-        print(traceback.format_exc())
         return jsonify({"error": str(e)}), 500
 
 
@@ -579,6 +683,7 @@ def delete_file():
     except Exception as e:
         print(f"Error deleting file: {e}")
         return jsonify({"success": False, "error": str(e)}), 500
+
 
 # ----------------- UML class loading for UI -----------------
 @app.route('/upload', methods=['POST'])

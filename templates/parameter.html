@@ -459,9 +459,10 @@
           </div>
 
           <div class="form-group">
-            <label for="dependency-depth">Dependency Depth</label>
-            <input id="dependency-depth" type="number" min="1" value="1" />
+            <label for="indirect-depth">Indirect Depth</label>
+            <input id="indirect-depth" type="number" min="1" value="1" />
           </div>
+
 
           <div class="form-group">
             <label for="dependent-depth">Dependent Depth</label>
@@ -500,7 +501,7 @@
   <script>
     const parameterInput = document.getElementById("parameter-input");
     const fetchRelationBtn = document.getElementById("fetch-relation");
-    const dependencyDepthInput = document.getElementById("dependency-depth");
+    const indirectDepthInput = document.getElementById("indirect-depth");
     const dependentDepthInput = document.getElementById("dependent-depth");
     const statusMessage = document.getElementById("status-message");
     const loading = document.getElementById("loading");
@@ -588,8 +589,8 @@
 
         const payload = {
           parameter: param,
-          dependency_depth: Number(dependencyDepthInput.value),
           dependent_depth: Number(dependentDepthInput.value),
+          indirect_depth: Number(indirectDepthInput.value),
         };
 
         const res = await fetch("/get-relation", {
