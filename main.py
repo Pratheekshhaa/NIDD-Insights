@@ -237,7 +237,7 @@ def load_uml_data(file_paths):
                     elif "not modifiable" in mod_status:
                         color = "gray"
                     else:
-                        color = "gray"
+                        color = "black"
 
                     if "mandatory" in required_col_ab:
                         mand = "(M)"
