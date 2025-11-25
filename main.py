@@ -46,7 +46,7 @@ def sanitize_for_mermaid(text):
 
 def create_safe_node_id(class_name):
     safe_id = re.sub(r'[^a-zA-Z0-9]', '_', class_name)
-    safe_id = re.sub(r'+', '', safe_id)
+    safe_id = re.sub(r'\+', '', safe_id)
     safe_id = safe_id.strip('_')
     return safe_id if safe_id else 'node'
 
