@@ -49,8 +49,6 @@ Nokia_UML
 ├── uploads
 │   └── Book1.xlsx
 ├── main.py
-├── parameter.py
-├── tempCodeRunnerFile.py
 
 
 ```
@@ -70,26 +68,19 @@ They are also color coded based on the modifications; furthermore they are addre
 
 ## Landing page:
 
-<img width="1919" height="945" alt="Image" src="https://github.com/user-attachments/assets/95a4b5f9-f9a7-4cb6-92b3-eff68dc44f99" />
+<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/7ecf289e-0ce4-4d2d-9f20-e22314d910cc" />
 <br><br>
-<img width="1918" height="941" alt="Screenshot 2025-10-06 155532" src="https://github.com/user-attachments/assets/8ed704ee-0b2c-406b-8713-372377ae349c" />
+<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/4d78bd3a-9e20-44b3-8437-ec2db634d372" />
 
 <br><br>
 ## UML Diagram Page:
 
-<img width="1915" height="942" alt="Image" src="https://github.com/user-attachments/assets/9fb19bfe-1fb6-4868-96c8-f4c9d5bf5e82" />
-<br><br>
-<img width="1918" height="941" alt="Image" src="https://github.com/user-attachments/assets/bc76e9bd-23a1-4fb4-bdc2-53df964526b8" />
-<br><br>
-<img width="1919" height="942" alt="Image" src="https://github.com/user-attachments/assets/5c8232d1-b0aa-4ec1-a415-477a7896e7b7" />
+<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/089465f3-8cf2-46e7-b634-96a129762c66" />
 <br><br>
 ## Parametrized Relation Page:
 <br><br>
-<img width="1919" height="945" alt="Image" src="https://github.com/user-attachments/assets/dd859f19-a34a-47f4-b72a-84116689ae2c" />
-<br><br>
-<img width="1913" height="944" alt="Image" src="https://github.com/user-attachments/assets/ddf9415f-706a-4922-9c8a-4a0669ec0dfb" />
-<br><br>
-<img width="1919" height="948" alt="Image" src="https://github.com/user-attachments/assets/07305829-1174-4156-934c-6c9323be2308" />
+<img width="1920" height="1080" alt="Screenshot (126)" src="https://github.com/user-attachments/assets/b9f59448-cfd7-41fd-bf6a-4bdfb184bc9f" />
+
 <br><br>
 
 
