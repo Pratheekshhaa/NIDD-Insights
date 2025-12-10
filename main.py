@@ -5,6 +5,11 @@ import os
 from collections import defaultdict, deque
 import shutil
 import re
+from reportlab.lib.pagesizes import letter, A4, landscape
+from reportlab.lib.utils import ImageReader
+from reportlab.pdfgen import canvas
+from io import BytesIO
+import base64
 
 app = Flask(__name__)
 app.secret_key = 'your-secret-key-change-this-in-production'
@@ -833,7 +838,86 @@ def generate_all_classes_uml():
 
     return jsonify({"uml": "\n".join(lines), "class_count": len(uml_data)})
 
-
+@app.route('/download-pdf', methods=['POST'])
+def download_pdf():
+    try:
+        data = request.get_json()
+        image_data = data.get('imageData')
+        class_name = data.get('className', 'uml_diagram')
+        
+        if not image_data:
+            return jsonify({"success": False, "error": "No image data provided"}), 400
+        
+        # Remove data URL prefix if present
+        if ',' in image_data:
+            image_data = image_data.split(',')[1]
+        
+        # Decode base64 image
+        image_bytes = base64.b64decode(image_data)
+        image_buffer = BytesIO(image_bytes)
+        
+        # Create PDF in memory
+        pdf_buffer = BytesIO()
+        
+        # Use landscape A4 for better diagram visibility
+        page_width, page_height = landscape(A4)
+        
+        # Create canvas
+        c = canvas.Canvas(pdf_buffer, pagesize=landscape(A4))
+        
+        # Get image dimensions
+        img = ImageReader(BytesIO(image_bytes))
+        img_width, img_height = img.getSize()
+        
+        # Calculate scaling to fit page with margins
+        margin = 50
+        available_width = page_width - (2 * margin)
+        available_height = page_height - (2 * margin)
+        
+        # Scale image to fit page while maintaining aspect ratio
+        scale_width = available_width / img_width
+        scale_height = available_height / img_height
+        scale = min(scale_width, scale_height)
+        
+        scaled_width = img_width * scale
+        scaled_height = img_height * scale
+        
+        # Center the image on the page
+        x = (page_width - scaled_width) / 2
+        y = (page_height - scaled_height) / 2
+        
+        # Draw the image
+        c.drawImage(img, x, y, width=scaled_width, height=scaled_height)
+        
+        # Add title at the top
+        c.setFont("Helvetica-Bold", 16)
+        title = f"UML Class Diagram - {class_name}"
+        c.drawCentredString(page_width / 2, page_height - 30, title)
+        
+        # Add timestamp at the bottom
+        from datetime import datetime
+        timestamp = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        c.setFont("Helvetica", 10)
+        c.drawCentredString(page_width / 2, 20, f"Generated on {timestamp}")
+        
+        # Save PDF
+        c.save()
+        
+        # Get PDF bytes
+        pdf_bytes = pdf_buffer.getvalue()
+        pdf_buffer.close()
+        
+        # Encode to base64 for sending to frontend
+        pdf_base64 = base64.b64encode(pdf_bytes).decode('utf-8')
+        
+        return jsonify({
+            "success": True,
+            "pdf": pdf_base64,
+            "filename": f"uml_diagram_{class_name}.pdf"
+        })
+        
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
 # ----------------- Session / Home -----------------
 @app.route('/clear-session', methods=['POST'])
 def clear_session():
