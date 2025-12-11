@@ -373,77 +373,34 @@
       gap: 0.4rem;
     }
 
-    /* Zoom Controls */
-    .zoom-controls {
-      display: flex;
-      align-items: center;
-      gap: 0.5rem;
-      background: white;
-      padding: 0.3rem;
-      border-radius: 0.5rem;
-      border: 1px solid var(--border-color);
-    }
-
-    .zoom-btn {
-      width: 32px;
-      height: 32px;
-      padding: 0;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      background: var(--primary-gradient);
-      color: white;
-      border: none;
-      border-radius: 0.3rem;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      font-size: 0.9rem;
-    }
-
-    .zoom-btn:hover:not(:disabled) {
-      transform: scale(1.05);
-      box-shadow: var(--shadow-sm);
-    }
-
-    .zoom-btn:disabled {
-      opacity: 0.4;
-      cursor: not-allowed;
-    }
-
-    .zoom-level {
-      font-size: 0.75rem;
-      font-weight: 600;
-      color: var(--text-primary);
-      min-width: 50px;
-      text-align: center;
-    }
-
-    .zoom-reset {
-      width: auto;
-      padding: 0.3rem 0.6rem;
-      font-size: 0.7rem;
-    }
-
+    
     .diagram-content {
       flex: 1;
       overflow: auto;
       min-height: 400px;
       padding: 2rem;
       position: relative;
-      display: flex;
-      justify-content: flex-start;
-      align-items: flex-start;
+       display: flex;
+      justify-content: center !important;
+      align-items: flex-start !important;
     }
+    #zoomArea {
+  
+    touch-action: none; /* required for pinch to work */
+    transform-origin: center center;
+    transition: transform 0.1s ease-out;
+  }
 
     .diagram-wrapper {
       width: 100%;
       height: 100%;
       display: flex;
-      justify-content: flex-start;
-      align-items: flex-start;
+      justify-content: center !important;
+      align-items: flex-start !important;
       overflow: visible;
       min-width: max-content;
       min-height: max-content;
+      padding-top: 100px !important;
     }
 
     .diagram-placeholder {
@@ -473,12 +430,15 @@
 
     #uml-diagram {
       display: inline-flex;
-      justify-content: center;
-      align-items: center;
-      transition: transform 0.3s ease;
+      justify-content: center !important;
+      align-items: flex-start !important; /* prevent vertical clipping */ 
+      margin: 0 auto !important; 
+      transition: transform 0.3s ease; 
+      transform-origin: center center; 
+      min-width: min-content; 
+      min-height: min-content; 
+      transition: transform 0.3s ease; /* ADD smooth transition */ 
       transform-origin: center center;
-      min-width: min-content;
-      min-height: min-content;
     }
 
     #uml-diagram .mermaid {
@@ -867,20 +827,8 @@
     <div class="diagram-panel fade-in">
       <div class="diagram-header">
         <h3><i class="fas fa-sitemap"></i> UML Class Diagram</h3>
-        <div class="zoom-controls" id="zoom-controls" style="display: none;">
-          <button class="zoom-btn" id="zoom-out" title="Zoom Out">
-            <i class="fas fa-minus"></i>
-          </button>
-          <span class="zoom-level" id="zoom-level">100%</span>
-          <button class="zoom-btn" id="zoom-in" title="Zoom In">
-            <i class="fas fa-plus"></i>
-          </button>
-          <button class="zoom-btn zoom-reset" id="zoom-reset" title="Reset Zoom">
-            <i class="fas fa-undo"></i>
-          </button>
-        </div>
       </div>
-      <div class="diagram-content">
+      <div class="diagram-content" id="zoomArea">
         <div class="legend-container">
           <button class="legend-toggle" id="legend-toggle">
             <i class="fas fa-info-circle"></i>
@@ -939,10 +887,7 @@
     let classList = [];
     let classDataMap = {}; // Map display names to full values
     let isInitialized = false;
-    let currentZoom = 1.0;
-    const MIN_ZOOM = 0.25;
-    const MAX_ZOOM = 3.0;
-    const ZOOM_STEP = 0.1;
+    
 
     const parameterInput = document.getElementById('parameter-input');
     const depthInput = document.getElementById('depth-input');
@@ -954,57 +899,9 @@
     const legendToggle = document.getElementById('legend-toggle');
     const legendPanel = document.getElementById('legend-panel');
     const legendClose = document.getElementById('legend-close');
-    const zoomControls = document.getElementById('zoom-controls');
-    const zoomInBtn = document.getElementById('zoom-in');
-    const zoomOutBtn = document.getElementById('zoom-out');
-    const zoomResetBtn = document.getElementById('zoom-reset');
-    const zoomLevelDisplay = document.getElementById('zoom-level');
     const umlDiagram = document.getElementById('uml-diagram');
 
-    // Calculate optimal zoom based on diagram complexity
-    function calculateOptimalZoom(classCount, depth) {
-      // For simple diagrams (1-2 classes), zoom out significantly
-      if (classCount === 1) {
-        return 0.5; // 50% for single class
-      } else if (classCount === 2) {
-        return 0.6; // 60% for two classes
-      } else if (classCount === 3) {
-        return 0.9; // 80% for three classes
-      } else if (classCount <= 5) {
-        return 1.0; // 100% for 4-5 classes (sweet spot)
-      } else if (classCount <= 8) {
-        return 0.9; // 90% for 6-8 classes
-      } else if (classCount <= 12) {
-        return 0.75; // 75% for 9-12 classes
-      } else {
-        return 0.6; // 60% for very complex diagrams
-      }
-    }
-
-    function updateZoom(newZoom) {
-      currentZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, newZoom));
-      umlDiagram.style.transform = `scale(${currentZoom})`;
-      zoomLevelDisplay.textContent = `${Math.round(currentZoom * 100)}%`;
-
-      zoomOutBtn.disabled = currentZoom <= MIN_ZOOM;
-      zoomInBtn.disabled = currentZoom >= MAX_ZOOM;
-    }
-
-    function zoomIn() {
-      updateZoom(currentZoom + ZOOM_STEP);
-    }
-
-    function zoomOut() {
-      updateZoom(currentZoom - ZOOM_STEP);
-    }
-
-    function resetZoom(optimalZoom = 1.0) {
-      updateZoom(optimalZoom);
-    }
-
-    function showZoomControls(show = true) {
-      zoomControls.style.display = show ? 'flex' : 'none';
-    }
+    
 
     function toggleLegend() {
       legendPanel.classList.toggle('show');
@@ -1055,13 +952,21 @@
       setTimeout(() => {
         mermaid.init(undefined, newDiagram).then(() => {
           updateButtonStates();
-          // Calculate and apply optimal zoom based on complexity
-          const optimalZoom = calculateOptimalZoom(classCount, depth);
-          resetZoom(optimalZoom);
-          showZoomControls(true);
-          console.log(`Applied optimal zoom: ${Math.round(optimalZoom * 100)}% for ${classCount} classes at depth ${depth}`);
+          resetZoom(1);
+          // 🔥 STOP MERMAID FROM AUTO-SHRINKING SVG
+        /*const svg = newDiagram.querySelector("svg");
+        if (svg) {
+            const g = svg.querySelector("g");
+            if (g && g.hasAttribute("transform")) {
+                g.setAttribute("transform", "");  // Remove scaling
+            }
+            svg.removeAttribute("width");
+            svg.removeAttribute("height");
+            svg.style.width = "auto";
+            svg.style.height = "auto";
+        } */
         });
-      }, 100);
+      }, 120);
     }
 
     async function loadClasses() {
@@ -1107,6 +1012,8 @@
       }
     }
 
+
+
     async function generateUML() {
       const selectedLabel = parameterInput.value.trim();
       const depth = parseInt(depthInput.value) || 1;
@@ -1144,6 +1051,46 @@
         showLoading(false);
       }
     }
+
+
+const zoomArea = document.getElementById("zoomArea");
+const content = document.getElementById("uml-diagram"); // FIXED ❗
+
+let scale = 1;
+let startDist = 0;
+
+// Mouse wheel zoom
+zoomArea.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  scale += e.deltaY < 0 ? 0.1 : -0.1;
+  scale = Math.min(Math.max(scale, 0.5), 3);
+  content.style.transform = `scale(${scale})`;
+});
+
+// Touch pinch start
+zoomArea.addEventListener("touchstart", (e) => {
+  if (e.touches.length === 2) {
+    startDist = getDistance(e.touches[0], e.touches[1]);
+  }
+});
+
+// Touch pinch move
+zoomArea.addEventListener("touchmove", (e) => {
+  if (e.touches.length === 2) {
+    e.preventDefault();
+
+    let newDist = getDistance(e.touches[0], e.touches[1]);
+    let zoomFactor = newDist / startDist;
+
+    scale = Math.min(Math.max(zoomFactor, 0.5), 3);
+    content.style.transform = `scale(${scale})`;
+  }
+});
+
+function getDistance(t1, t2) {
+  return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+}
+
 
 
     async function downloadDiagram() {
@@ -1405,26 +1352,9 @@ async function downloadPDF() {
     downloadPdfBtn.addEventListener('click', downloadPDF);
     parameterInput.addEventListener('input', updateButtonStates);
     depthInput.addEventListener('change', updateButtonStates);
-    legendToggle.addEventListener('click', toggleLegend);
-    legendClose.addEventListener('click', closeLegend);
-    zoomInBtn.addEventListener('click', zoomIn);
-    zoomOutBtn.addEventListener('click', zoomOut);
-    zoomResetBtn.addEventListener('click', () => resetZoom(currentZoom));
+    
 
-    document.addEventListener('keydown', (e) => {
-      if (e.ctrlKey || e.metaKey) {
-        if (e.key === '+' || e.key === '=') {
-          e.preventDefault();
-          zoomIn();
-        } else if (e.key === '-') {
-          e.preventDefault();
-          zoomOut();
-        } else if (e.key === '0') {
-          e.preventDefault();
-          resetZoom(1.0);
-        }
-      }
-    });
+   
 
     document.addEventListener('DOMContentLoaded', async () => {
       await loadClasses();
