@@ -312,147 +312,157 @@ def get_parameters():
 @app.route('/get-relation', methods=['POST'])
 def get_relation():
     """
-    dependency (direct): Column D == param → extract abbrevs from Column P
-    dependent (recursive): cleaned P contains abbrev → get Column D
-    indirect (recursive): perform dependent search for each dependency result
+    DEPENDENT (forward):
+        Row where Column D == P → Column P contains dependent parameters.
+        Uses BFS with dependent_depth.
+
+    DEPENDENCY (backward):
+        Row where cleaned P contains P → Column D is a dependency.
+        ALWAYS direct — no depth, no recursion.
+
+    INDIRECT:
+        Start from (direct dependents ∪ direct dependencies).
+        For indirect_depth loops:
+            For each X in frontier:
+                add direct dependents(X)
+                add direct dependencies(X)
     """
     try:
         data = request.get_json()
 
-        user_param = data.get("parameter", "").strip()
+        P = data.get("parameter", "").strip()
         dependent_depth = int(data.get("dependent_depth", 1))
         indirect_depth = int(data.get("indirect_depth", 1))
 
-        if not user_param:
+        if not P:
             return jsonify({"error": "No parameter provided"}), 400
 
         file_paths = session.get('uploaded_files', [])
         if not file_paths:
             return jsonify({"error": "No Excel files uploaded"}), 400
 
-        # Abbreviation selected from UI (Column D)
-        param = user_param.strip()
-
-        dependency_set = set()
+        # Final output sets
         dependent_set = set()
+        dependency_set = set()
         indirect_set = set()
 
-        def is_valid(p):
-            return p and str(p).strip().lower() not in ["", "nan", "none"]
-
-        # ---------------- CLEANING RULE ----------------
-        def extract_abbrev(cell_value):
-            """
-            Column P contains:
-            MOC-L1-MO2-mocL1Mo2Usage::public
-            want → mocL1Mo2Usage
-            """
-            out = []
-            if pd.isna(cell_value):
-                return out
-
-            s = str(cell_value).strip()
+        # --- Column P cleaner ---
+        def extract_related(cell):
+            if pd.isna(cell):
+                return []
+            s = str(cell).strip()
             if not s:
-                return out
-
-            parts = [p.strip() for p in s.split(";") if p.strip()]
-
-            for part in parts:
-                # remove ::suffix (public/private/etc)
-                part = re.sub(r"::.*$", "", part)
-
-                # pick LAST segment after '-'
+                return []
+            items = []
+            for part in s.split(";"):
+                part = part.strip()
+                if not part:
+                    continue
+                part = re.sub(r"::.*$", "", part)     # remove ::public etc.
                 if "-" in part:
-                    abbr = part.split("-")[-1].strip()
-                else:
-                    abbr = part.strip()
-
-                if abbr:
-                    out.append(abbr)
-
-            return out
+                    part = part.split("-")[-1].strip()
+                if part:
+                    items.append(part)
+            return items
 
         # ---------------- PROCESS ALL FILES ----------------
         for excel_path in file_paths:
-            df = pd.read_excel(excel_path, engine="openpyxl")
+
+            df = pd.read_excel(excel_path, engine='openpyxl')
             if df.shape[1] < 16:
                 continue
 
-            # C = index 2  (Parameter Name)  [NOT USED]
-            # D = index 3  (Abbreviation)
-            # P = index 15 (Relations)
             col_D = df.columns[3]
             col_P = df.columns[15]
 
-            # Clean P column
-            df["_P_clean"] = df[col_P].apply(extract_abbrev)
+            df["_P_clean"] = df[col_P].apply(extract_related)
 
-            # -----------------------------
-            # 1️⃣ DEPENDENCY: Column D == param
-            # -----------------------------
-            direct_rows = df[df[col_D].astype(str).str.strip() == param][col_P]
+            # =====================================================
+            # 1️⃣ DIRECT DEPENDENT (forward)
+            # =====================================================
+            direct_dependents = set()
+            rows = df[df[col_D].astype(str).str.strip() == P][col_P]
 
-            for item in direct_rows:
-                for ab in extract_abbrev(item):
-                    dependency_set.add(ab)
+            for val in rows:
+                direct_dependents |= set(extract_related(val))
 
-            # -----------------------------
-            # 2️⃣ DEPENDENT: recursive search
-            # -----------------------------
-            visited = {param}
-            level = {param}
+            # BFS using dependent_depth
+            visited = {P}
+            frontier = {P}
 
             for _ in range(dependent_depth):
-                nxt = set()
-                for ab in level:
-                    # rows where cleaned P contains ab
-                    rows = df[df["_P_clean"].apply(lambda arr: ab in arr)][col_D]
+                new_frontier = set()
+                for param in frontier:
+                    rows2 = df[df[col_D].astype(str).str.strip() == param][col_P]
+                    for v in rows2:
+                        for dep in extract_related(v):
+                            if dep not in visited:
+                                visited.add(dep)
+                                dependent_set.add(dep)
+                                new_frontier.add(dep)
+                if not new_frontier:
+                    break
+                frontier = new_frontier
 
-                    for item in rows:
-                        cleaned = str(item).strip()
-                        if is_valid(cleaned) and cleaned not in visited:
-                            dependent_set.add(cleaned)
-                            nxt.add(cleaned)
-                            visited.add(cleaned)
+            # =====================================================
+            # 2️⃣ DIRECT DEPENDENCY (backward NO DEPTH)
+            # =====================================================
+            rows2 = df[df["_P_clean"].apply(lambda arr: P in arr)][col_D]
 
-                if not nxt:
+            for val in rows2:
+                cleaned = str(val).strip()
+                if cleaned:
+                    dependency_set.add(cleaned)
+
+            # =====================================================
+            # 3️⃣ INDIRECT = BFS using indirect_depth
+            # =====================================================
+            start_points = direct_dependents | dependency_set
+
+            visited_indirect = set(start_points)
+            frontier_indirect = set(start_points)
+
+            for _ in range(indirect_depth):
+                next_frontier = set()
+                for X in frontier_indirect:
+
+                    # dependents of X
+                    rowsX = df[df[col_D].astype(str).str.strip() == X][col_P]
+                    for v in rowsX:
+                        for dep in extract_related(v):
+                            if dep not in visited_indirect:
+                                visited_indirect.add(dep)
+                                indirect_set.add(dep)
+                                next_frontier.add(dep)
+
+                    # dependencies of X
+                    rowsX2 = df[df["_P_clean"].apply(lambda arr: X in arr)][col_D]
+                    for v in rowsX2:
+                        cleaned = str(v).strip()
+                        if cleaned and cleaned not in visited_indirect:
+                            visited_indirect.add(cleaned)
+                            indirect_set.add(cleaned)
+                            next_frontier.add(cleaned)
+
+                if not next_frontier:
                     break
 
-                level = nxt
+                frontier_indirect = next_frontier
 
-            # -----------------------------
-            # 3️⃣ INDIRECT: recursion starting from dependency_set
-            # -----------------------------
-            for dep_abbrev in list(dependency_set):
+        # Final cleanup
+        indirect_set -= dependent_set
+        indirect_set -= dependency_set
+        indirect_set.discard(P)
 
-                visited = {dep_abbrev}
-                level = {dep_abbrev}
-
-                for _ in range(indirect_depth):
-                    nxt = set()
-                    for ab in level:
-                        rows = df[df["_P_clean"].apply(lambda arr: ab in arr)][col_D]
-
-                        for item in rows:
-                            cleaned = str(item).strip()
-                            if is_valid(cleaned) and cleaned not in visited:
-                                indirect_set.add(cleaned)
-                                nxt.add(cleaned)
-                                visited.add(cleaned)
-
-                    if not nxt:
-                        break
-                    level = nxt
-
-        # Return sorted results
         return jsonify({
-            "dependency": sorted(dependency_set),
             "dependent": sorted(dependent_set),
-            "indirect": sorted(indirect_set),
+            "dependency": sorted(dependency_set),
+            "indirect": sorted(indirect_set)
         })
 
     except Exception as e:
         return jsonify({"error": str(e)}), 500
+
 
 
 @app.route('/reload-data', methods=['POST'])
