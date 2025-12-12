@@ -19,7 +19,7 @@ An interactive web-based tool for generating Unified Modeling Language (UML) dia
 - **Frontend**:
 - HTML, CSS, JavaScript
 - **Backend**:
-- Python, Flask and their related libraries, Pandas, Watch dog and their related libraries , Os Library, and Openpyxl Libraries .
+- Python, Flask and their related libraries, Pandas, Os Library, and Openpyxl Libraries ,ReportLab library.
 - SheetJS library:for reading Excel files
 
 ---
@@ -32,6 +32,7 @@ python --version
 
 # Download The Python Libraries:
 pip install flask pandas openpyxl
+pip install reportlab
 
 # Run the command in Command prompt (Cmd) Terminal:
 python main.py
