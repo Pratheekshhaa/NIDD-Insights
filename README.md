@@ -10,7 +10,7 @@ An interactive web-based tool for generating Unified Modeling Language (UML) dia
 -  Automatically parse class names, attributes, and methods
 -  Render clean UML Class Diagrams, Parameterized Diagram
 -  Lightweight, fast, and responsive
--  No data is uploaded — all processing happens locally in the browser
+-  No data is uploaded all processing happens locally in the browser
 
 ---
 
