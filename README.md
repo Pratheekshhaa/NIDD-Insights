@@ -31,8 +31,7 @@ Install all the required Libraries
 python --version
 
 # Download The Python Libraries:
-pip install flask pandas openpyxl
-pip install reportlab
+pip install flask pandas openpyxl werkzeug reportlab
 
 # Run the command in Command prompt (Cmd) Terminal:
 python main.py
