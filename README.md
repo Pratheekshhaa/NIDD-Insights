@@ -62,24 +62,20 @@ They are also color coded based on the modifications; furthermore they are addre
 
 ---
 
-
-
 ## Output:
 
-## Landing page:
+### Landing page:
 
-<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/7ecf289e-0ce4-4d2d-9f20-e22314d910cc" />
-<br><br>
-<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/4d78bd3a-9e20-44b3-8437-ec2db634d372" />
+<img width="2842" height="1490" alt="landingpage" src="https://github.com/user-attachments/assets/72dec43d-ea2e-4b5a-9eb8-660a659379a2" />
 
 <br><br>
-## UML Diagram Page:
+### UML Diagram Page:
+<img width="2870" height="1526" alt="umldiagram" src="https://github.com/user-attachments/assets/122c53da-268e-476b-bd11-aecea1f4c939" />
 
-<img width="1920" height="1080" alt="Image" src="https://github.com/user-attachments/assets/089465f3-8cf2-46e7-b634-96a129762c66" />
 <br><br>
-## Parametrized Relation Page:
+### Parametrized Relation Page:
 <br><br>
-<img width="1920" height="1080" alt="Screenshot (126)" src="https://github.com/user-attachments/assets/b9f59448-cfd7-41fd-bf6a-4bdfb184bc9f" />
+<img width="2844" height="1516" alt="parameter" src="https://github.com/user-attachments/assets/bd0d1f3d-d915-4ef3-a16d-b8ef7635f75a" />
 
 <br><br>
 
