@@ -41,7 +41,7 @@ python main.py
 ## 📁 Folder Structure
 
 ```text
-Nokia_UML
+UML
 ├── templates
 │   └── main.html
 │   └── parameter.html
