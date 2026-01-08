@@ -12,7 +12,7 @@ from io import BytesIO
 import base64
 
 app = Flask(__name__)
-app.secret_key = 'your-secret-key-change-this-in-production'
+app.secret_key = 'keyyyy'
 app.config['UPLOAD_FOLDER'] = 'uploads'
 app.config['TEMP_FOLDER'] = 'temp_uploads'
 
