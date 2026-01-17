@@ -373,23 +373,25 @@
       gap: 0.4rem;
     }
 
-    
+
     .diagram-content {
       flex: 1;
       overflow: auto;
       min-height: 400px;
       padding: 2rem;
       position: relative;
-       display: flex;
+      display: flex;
       justify-content: center !important;
       align-items: flex-start !important;
     }
+
     #zoomArea {
-  
-    touch-action: none; /* required for pinch to work */
-    transform-origin: center center;
-    transition: transform 0.1s ease-out;
-  }
+
+      touch-action: none;
+      /* required for pinch to work */
+      transform-origin: center center;
+      transition: transform 0.1s ease-out;
+    }
 
     .diagram-wrapper {
       width: 100%;
@@ -431,13 +433,15 @@
     #uml-diagram {
       display: inline-flex;
       justify-content: center !important;
-      align-items: flex-start !important; /* prevent vertical clipping */ 
-      margin: 0 auto !important; 
-      transition: transform 0.3s ease; 
-      transform-origin: center center; 
-      min-width: min-content; 
-      min-height: min-content; 
-      transition: transform 0.3s ease; /* ADD smooth transition */ 
+      align-items: flex-start !important;
+      /* prevent vertical clipping */
+      margin: 0 auto !important;
+      transition: transform 0.3s ease;
+      transform-origin: center center;
+      min-width: min-content;
+      min-height: min-content;
+      transition: transform 0.3s ease;
+      /* ADD smooth transition */
       transform-origin: center center;
     }
 
@@ -887,7 +891,7 @@
     let classList = [];
     let classDataMap = {}; // Map display names to full values
     let isInitialized = false;
-    
+
 
     const parameterInput = document.getElementById('parameter-input');
     const depthInput = document.getElementById('depth-input');
@@ -901,7 +905,7 @@
     const legendClose = document.getElementById('legend-close');
     const umlDiagram = document.getElementById('uml-diagram');
 
-    
+
 
     function toggleLegend() {
       legendPanel.classList.toggle('show');
@@ -932,11 +936,11 @@
     }
 
     function updateButtonStates() {
-    const hasValidClass = parameterInput.value && classList.includes(parameterInput.value);
-    const hasDiagram = document.querySelector('#uml-diagram .mermaid');
-    generateUmlBtn.disabled = !parameterInput.value;
-    downloadImageBtn.disabled = !hasDiagram;
-    downloadPdfBtn.disabled = !hasDiagram; // Add this line
+      const hasValidClass = parameterInput.value && classList.includes(parameterInput.value);
+      const hasDiagram = document.querySelector('#uml-diagram .mermaid');
+      generateUmlBtn.disabled = !parameterInput.value;
+      downloadImageBtn.disabled = !hasDiagram;
+      downloadPdfBtn.disabled = !hasDiagram; // Add this line
     }
 
     function renderMermaid(uml, classCount, depth) {
@@ -954,17 +958,17 @@
           updateButtonStates();
           resetZoom(1);
           // 🔥 STOP MERMAID FROM AUTO-SHRINKING SVG
-        /*const svg = newDiagram.querySelector("svg");
-        if (svg) {
-            const g = svg.querySelector("g");
-            if (g && g.hasAttribute("transform")) {
-                g.setAttribute("transform", "");  // Remove scaling
-            }
-            svg.removeAttribute("width");
-            svg.removeAttribute("height");
-            svg.style.width = "auto";
-            svg.style.height = "auto";
-        } */
+          /*const svg = newDiagram.querySelector("svg");
+          if (svg) {
+              const g = svg.querySelector("g");
+              if (g && g.hasAttribute("transform")) {
+                  g.setAttribute("transform", "");  // Remove scaling
+              }
+              svg.removeAttribute("width");
+              svg.removeAttribute("height");
+              svg.style.width = "auto";
+              svg.style.height = "auto";
+          } */
         });
       }, 120);
     }
@@ -1053,141 +1057,109 @@
     }
 
 
-const zoomArea = document.getElementById("zoomArea");
-const content = document.getElementById("uml-diagram"); // FIXED ❗
+    const zoomArea = document.getElementById("zoomArea");
+    const content = document.getElementById("uml-diagram"); // FIXED ❗
 
-let scale = 1;
-let startDist = 0;
+    let scale = 1;
+    let startDist = 0;
 
-// Mouse wheel zoom
-zoomArea.addEventListener("wheel", (e) => {
-  e.preventDefault();
-  scale += e.deltaY < 0 ? 0.1 : -0.1;
-  scale = Math.min(Math.max(scale, 0.5), 3);
-  content.style.transform = `scale(${scale})`;
-});
+    // Mouse wheel zoom
+    zoomArea.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      scale += e.deltaY < 0 ? 0.1 : -0.1;
+      scale = Math.min(Math.max(scale, 0.5), 3);
+      content.style.transform = `scale(${scale})`;
+    });
 
-// Touch pinch start
-zoomArea.addEventListener("touchstart", (e) => {
-  if (e.touches.length === 2) {
-    startDist = getDistance(e.touches[0], e.touches[1]);
-  }
-});
+    // Touch pinch start
+    zoomArea.addEventListener("touchstart", (e) => {
+      if (e.touches.length === 2) {
+        startDist = getDistance(e.touches[0], e.touches[1]);
+      }
+    });
 
-// Touch pinch move
-zoomArea.addEventListener("touchmove", (e) => {
-  if (e.touches.length === 2) {
-    e.preventDefault();
+    // Touch pinch move
+    zoomArea.addEventListener("touchmove", (e) => {
+      if (e.touches.length === 2) {
+        e.preventDefault();
 
-    let newDist = getDistance(e.touches[0], e.touches[1]);
-    let zoomFactor = newDist / startDist;
+        let newDist = getDistance(e.touches[0], e.touches[1]);
+        let zoomFactor = newDist / startDist;
 
-    scale = Math.min(Math.max(zoomFactor, 0.5), 3);
-    content.style.transform = `scale(${scale})`;
-  }
-});
+        scale = Math.min(Math.max(zoomFactor, 0.5), 3);
+        content.style.transform = `scale(${scale})`;
+      }
+    });
 
-function getDistance(t1, t2) {
-  return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
-}
+    function getDistance(t1, t2) {
+      return Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+    }
 
 
 
     async function downloadDiagram() {
-      // 1. Define targets
       const diagramSvg = document.querySelector('#uml-diagram .mermaid svg');
-      const legendPanelNode = document.getElementById('legend-panel');
 
       if (!diagramSvg) return showStatus('No diagram SVG found.', 'error');
-      if (!legendPanelNode) return showStatus('Legend panel not found.', 'error');
 
       if (typeof domtoimage === 'undefined') {
         return showStatus('Download library (dom-to-image) not found. Please refresh the page.', 'error');
       }
 
-      // 2. Create the main temporary container
+      // Create temporary container without legend
       const downloadContainer = document.createElement('div');
       downloadContainer.id = 'temp-download-container';
 
       Object.assign(downloadContainer.style, {
-
         position: 'absolute',
         left: '0px',
         top: '0px',
-        zIndex: '-9999', // Place it behind everything
-        display: 'flex',
-        alignItems: 'flex-start',
-        gap: '24px',
-        padding: '24px',
+        zIndex: '-9999',
+        display: 'inline-block',
+        padding: '40px',
         backgroundColor: '#ffffff',
-        border: '1px solid #e2e8f0',
-        borderRadius: '0.8rem',
         opacity: '1',
         visibility: 'visible'
       });
 
-      // 3. Create the div that mimics <div id="uml-diagram">
+      // Create wrapper with proper styling
       const diagramWrapper = document.createElement('div');
-      diagramWrapper.id = 'uml-diagram'; // This forces your styles to apply!
+      diagramWrapper.id = 'uml-diagram';
 
-      // 4. Create the div that mimics <div class="mermaid">
       const mermaidWrapper = document.createElement('div');
       mermaidWrapper.className = 'mermaid';
 
-      // 5. Clone the SVG (so the original is never touched)
+      // Clone SVG
       const diagramClone = diagramSvg.cloneNode(true);
 
-      // 6. Assemble the diagram part
+      // Force SVG to maintain quality
+      diagramClone.setAttribute('width', diagramSvg.getAttribute('width') || diagramSvg.getBBox().width);
+      diagramClone.setAttribute('height', diagramSvg.getAttribute('height') || diagramSvg.getBBox().height);
+
       mermaidWrapper.appendChild(diagramClone);
       diagramWrapper.appendChild(mermaidWrapper);
-
-      // 7. Clone and style the legend
-      const legendClone = legendPanelNode.cloneNode(true);
-      Object.assign(legendClone.style, {
-        position: 'relative',
-        top: 'auto',
-        right: 'auto',
-        marginTop: '0',
-        opacity: '1',
-        visibility: 'visible',
-        transform: 'none',
-        width: '200px',
-        minWidth: 'auto', // Override the original min-width
-        flexShrink: '0',
-        boxShadow: 'none'
-      });
-      const closeBtn = legendClone.querySelector('.legend-close');
-      if (closeBtn) closeBtn.style.display = 'none';
-
-      // 8. Assemble the final temporary container
-      downloadContainer.appendChild(diagramWrapper); // Add the styled diagram
-      downloadContainer.appendChild(legendClone);   // Add the legend
+      downloadContainer.appendChild(diagramWrapper);
       document.body.appendChild(downloadContainer);
 
-      // Give the browser a moment to render
-      await new Promise(resolve => setTimeout(resolve, 50));
+      await new Promise(resolve => setTimeout(resolve, 100));
 
-      // *** FIX FOR CLIPPING ***
-      // Store original body overflow-x style
       const originalBodyOverflowX = document.body.style.overflowX;
 
       try {
         showLoading(true);
-        showStatus('Preparing download...', 'info');
+        showStatus('Preparing high-resolution download...', 'info');
 
-        // 9. Setup high-res (anti-blur) options
-        const scale = 2; // Render at 2x resolution
+        // Increased scale for better quality (4x resolution)
+        const scale = 4;
         const rect = downloadContainer.getBoundingClientRect();
 
-        // *** FIX FOR CLIPPING ***
-        // Temporarily allow horizontal overflow. This stops the browser
-        // from clipping our zIndex:-1 container and DOES NOT cause a layout jump.
         document.body.style.overflowX = 'visible';
 
         const options = {
           bgcolor: '#ffffff',
           width: rect.width * scale,
           height: rect.height * scale,
+          quality: 1.0,
           style: {
             transform: `scale(${scale})`,
             transformOrigin: 'top left',
@@ -1196,16 +1168,15 @@ function getDistance(t1, t2) {
           }
         };
 
-        // 10. Capture the container
         const pngDataUrl = await domtoimage.toPng(downloadContainer, options);
 
         const link = document.createElement('a');
         const filename = parameterInput.value.replace(/[^a-zA-Z0-9]/g, '_');
-        link.download = `uml_diagram_with_legend_${filename}_@${scale}x.png`;
+        link.download = `uml_diagram_${filename}_4x.png`;
         link.href = pngDataUrl;
         link.click();
 
-        showStatus('High-res diagram downloaded!', 'success');
+        showStatus('High-resolution diagram downloaded!', 'success');
 
       } catch (error) {
         console.error("Download Error:", error);
@@ -1213,138 +1184,112 @@ function getDistance(t1, t2) {
         showStatus(`Error downloading diagram: ${errorMsg}`, 'error');
       } finally {
         showLoading(false);
-
-        // *** FIX FOR CLIPPING ***
-        // Restore original body overflow-x style
         document.body.style.overflowX = originalBodyOverflowX;
-
-        // 11. Clean up
         document.body.removeChild(downloadContainer);
       }
     }
+    async function downloadPDF() {
+      const diagramSvg = document.querySelector('#uml-diagram .mermaid svg');
 
-async function downloadPDF() {
-  const diagramSvg = document.querySelector('#uml-diagram .mermaid svg');
-  const legendPanelNode = document.getElementById('legend-panel');
+      if (!diagramSvg) return showStatus('No diagram SVG found.', 'error');
 
-  if (!diagramSvg) return showStatus('No diagram SVG found.', 'error');
-  if (!legendPanelNode) return showStatus('Legend panel not found.', 'error');
-
-  if (typeof domtoimage === 'undefined') {
-    return showStatus('Download library not found. Please refresh the page.', 'error');
-  }
-
-  // Create temporary container (same as PNG download)
-  const downloadContainer = document.createElement('div');
-  downloadContainer.id = 'temp-pdf-container';
-
-  Object.assign(downloadContainer.style, {
-    position: 'absolute',
-    left: '0px',
-    top: '0px',
-    zIndex: '-9999',
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '24px',
-    padding: '24px',
-    backgroundColor: '#ffffff',
-    border: '1px solid #e2e8f0',
-    borderRadius: '0.8rem',
-    opacity: '1',
-    visibility: 'visible'
-  });
-
-  const diagramWrapper = document.createElement('div');
-  diagramWrapper.id = 'uml-diagram';
-
-  const mermaidWrapper = document.createElement('div');
-  mermaidWrapper.className = 'mermaid';
-
-  const diagramClone = diagramSvg.cloneNode(true);
-  mermaidWrapper.appendChild(diagramClone);
-  diagramWrapper.appendChild(mermaidWrapper);
-
-  const legendClone = legendPanelNode.cloneNode(true);
-  Object.assign(legendClone.style, {
-    position: 'relative',
-    top: 'auto',
-    right: 'auto',
-    marginTop: '0',
-    opacity: '1',
-    visibility: 'visible',
-    transform: 'none',
-    width: '200px',
-    minWidth: 'auto',
-    flexShrink: '0',
-    boxShadow: 'none'
-  });
-  const closeBtn = legendClone.querySelector('.legend-close');
-  if (closeBtn) closeBtn.style.display = 'none';
-
-  downloadContainer.appendChild(diagramWrapper);
-  downloadContainer.appendChild(legendClone);
-  document.body.appendChild(downloadContainer);
-
-  await new Promise(resolve => setTimeout(resolve, 50));
-
-  const originalBodyOverflowX = document.body.style.overflowX;
-
-  try {
-    showLoading(true);
-    showStatus('Generating PDF...', 'info');
-
-    const scale = 2;
-    const rect = downloadContainer.getBoundingClientRect();
-
-    document.body.style.overflowX = 'visible';
-
-    const options = {
-      bgcolor: '#ffffff',
-      width: rect.width * scale,
-      height: rect.height * scale,
-      style: {
-        transform: `scale(${scale})`,
-        transformOrigin: 'top left',
-        width: `${rect.width}px`,
-        height: `${rect.height}px`
+      if (typeof domtoimage === 'undefined') {
+        return showStatus('Download library not found. Please refresh the page.', 'error');
       }
-    };
 
-    const pngDataUrl = await domtoimage.toPng(downloadContainer, options);
+      // Create temporary container without legend
+      const downloadContainer = document.createElement('div');
+      downloadContainer.id = 'temp-pdf-container';
 
-    // Send to backend to convert to PDF
-    const className = parameterInput.value.replace(/[^a-zA-Z0-9]/g, '_');
-    const response = await fetch('/download-pdf', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        imageData: pngDataUrl,
-        className: className
-      })
-    });
+      Object.assign(downloadContainer.style, {
+        position: 'absolute',
+        left: '0px',
+        top: '0px',
+        zIndex: '-9999',
+        display: 'inline-block',
+        padding: '40px',
+        backgroundColor: '#ffffff',
+        opacity: '1',
+        visibility: 'visible'
+      });
 
-    const result = await response.json();
+      const diagramWrapper = document.createElement('div');
+      diagramWrapper.id = 'uml-diagram';
 
-    if (result.success) {
-      // Create download link for PDF
-      const link = document.createElement('a');
-      link.download = result.filename;
-      link.href = 'data:application/pdf;base64,' + result.pdf;
-      link.click();
-      showStatus('PDF downloaded successfully!', 'success');
-    } else {
-      throw new Error(result.error || 'Failed to generate PDF');
+      const mermaidWrapper = document.createElement('div');
+      mermaidWrapper.className = 'mermaid';
+
+      const diagramClone = diagramSvg.cloneNode(true);
+
+      // Force SVG quality
+      diagramClone.setAttribute('width', diagramSvg.getAttribute('width') || diagramSvg.getBBox().width);
+      diagramClone.setAttribute('height', diagramSvg.getAttribute('height') || diagramSvg.getBBox().height);
+
+      mermaidWrapper.appendChild(diagramClone);
+      diagramWrapper.appendChild(mermaidWrapper);
+      downloadContainer.appendChild(diagramWrapper);
+      document.body.appendChild(downloadContainer);
+
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+      const originalBodyOverflowX = document.body.style.overflowX;
+
+      try {
+        showLoading(true);
+        showStatus('Generating high-resolution PDF...', 'info');
+
+        const scale = 4;
+        const rect = downloadContainer.getBoundingClientRect();
+
+        document.body.style.overflowX = 'visible';
+
+        const options = {
+          bgcolor: '#ffffff',
+          width: rect.width * scale,
+          height: rect.height * scale,
+          quality: 1.0,
+          style: {
+            transform: `scale(${scale})`,
+            transformOrigin: 'top left',
+            width: `${rect.width}px`,
+            height: `${rect.height}px`
+          }
+        };
+
+        const pngDataUrl = await domtoimage.toPng(downloadContainer, options);
+
+        // Send to backend
+        const className = parameterInput.value.replace(/[^a-zA-Z0-9]/g, '_');
+        const response = await fetch('/download-pdf', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            imageData: pngDataUrl,
+            className: className
+          })
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+          const link = document.createElement('a');
+          link.download = result.filename;
+          link.href = 'data:application/pdf;base64,' + result.pdf;
+          link.click();
+          showStatus('PDF downloaded successfully!', 'success');
+        } else {
+          throw new Error(result.error || 'Failed to generate PDF');
+        }
+
+      } catch (error) {
+        console.error("PDF Download Error:", error);
+        showStatus(`Error downloading PDF: ${error.message}`, 'error');
+      } finally {
+        showLoading(false);
+        document.body.style.overflowX = originalBodyOverflowX;
+        document.body.removeChild(downloadContainer);
+      }
     }
-
-  } catch (error) {
-    console.error("PDF Download Error:", error);
-    showStatus(`Error downloading PDF: ${error.message}`, 'error');
-  } finally {
-    showLoading(false);
-    document.body.style.overflowX = originalBodyOverflowX;
-    document.body.removeChild(downloadContainer);
-  }
-}
 
 
     generateUmlBtn.addEventListener('click', generateUML);
@@ -1352,9 +1297,9 @@ async function downloadPDF() {
     downloadPdfBtn.addEventListener('click', downloadPDF);
     parameterInput.addEventListener('input', updateButtonStates);
     depthInput.addEventListener('change', updateButtonStates);
-    
 
-   
+
+
 
     document.addEventListener('DOMContentLoaded', async () => {
       await loadClasses();

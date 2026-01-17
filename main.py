@@ -404,9 +404,7 @@ def get_relation():
                     break
                 frontier = new_frontier
 
-            # =====================================================
             # 2️⃣ DIRECT DEPENDENCY (backward NO DEPTH)
-            # =====================================================
             rows2 = df[df["_P_clean"].apply(lambda arr: P in arr)][col_D]
 
             for val in rows2:
@@ -414,7 +412,6 @@ def get_relation():
                 if cleaned:
                     dependency_set.add(cleaned)
 
-            # =====================================================
             # 3️⃣ INDIRECT = BFS using indirect_depth
             # =====================================================
             start_points = direct_dependents | dependency_set
